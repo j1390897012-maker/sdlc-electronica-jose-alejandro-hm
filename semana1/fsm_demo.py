@@ -1,4 +1,4 @@
-class Estadoinicial:
+class Estadobase:
     def __init__(self, duracion: int):
         self.duracion = duracion 
         self.tiempo_actual = 0
@@ -10,19 +10,19 @@ class Estadoinicial:
         return self.tiempo_actual >= self.duracion
 
 
-class EstadoRojo(Estadoinicial):
+class EstadoRojo(Estadobase):
     def __init__(self):
         super().__init__(30)
         
 
 
-class EstadoVerde(Estadoinicial):
+class EstadoVerde(Estadobase):
     def __init__(self):
         super().__init__(20)
 
 
 
-class EstadoAmarillo(Estadoinicial):
+class EstadoAmarillo(Estadobase):
     def __init__(self):
         super().__init__(5) 
 
@@ -32,3 +32,13 @@ class Semaforo:
         self.verde = EstadoVerde()
         self.amarillo = EstadoAmarillo()
         self.estado_actual = self.rojo
+    def avanzar(self):
+        if self.estado_actual == self.rojo:
+            self.estado_actual = self.verde
+        elif self.estado_actual == self.verde:
+            self.estado_actual = self.amarillo
+        elif self.estado_actual == self.amarillo:
+            self.estado_actual = self.rojo
+
+         
+
