@@ -32,6 +32,7 @@ class Semaforo:
         self.verde = EstadoVerde()
         self.amarillo = EstadoAmarillo()
         self.estado_actual = self.rojo
+        self.contador = 0
     def avanzar(self):
         if self.estado_actual == self.rojo:
             self.estado_actual = self.verde
@@ -39,6 +40,7 @@ class Semaforo:
             self.estado_actual = self.amarillo
         elif self.estado_actual == self.amarillo:
             self.estado_actual = self.rojo
+            self.contador += 1
 
          
 
