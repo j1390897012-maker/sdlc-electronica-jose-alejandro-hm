@@ -49,4 +49,49 @@ class EnviarPorWifi(Comunicacion):
 class MostrarEnPantalla(Pantalla):
     def mostrar(self):
         return {"mensaje": "Mostrando datos en pantalla"}
-        
+
+
+# Ejemplo "mal" de DIP
+
+class Nube:
+    def guardar(self, datos):
+        return {"mensaje": "Guardado en la nube"}
+
+
+class MemoriaLocal:
+    def guardar(self, datos):
+        return {"mensaje": "Guardado en memoria local"}
+
+
+class Monitoreo:
+    def __init__(self):
+        self.nube = Nube()
+        self.memoria = MemoriaLocal()
+
+    def guardar_datos(self, datos, tipo):
+        if tipo == "nube":
+            return self.nube.guardar(datos)
+
+        elif tipo == "local":
+            return self.memoria.guardar(datos)
+
+#Ejemplo "bien" de DIP
+
+class Almacenamiento:
+    def guardar(self, datos):
+        pass
+
+class Nube(Almacenamiento):
+    def guardar(self, datos):
+        return {"mensaje": "Guardado en la nube"}
+
+class MemoriaLocal(Almacenamiento):
+    def guardar(self, datos):
+        return {"mensaje": "Guardado en memoria local"}
+
+class Monitoreo:
+    def __init__(self, almacenamiento):
+        self.almacenamiento = almacenamiento
+
+    def guardar_datos(self, datos):
+        return self.almacenamiento.guardar(datos)
