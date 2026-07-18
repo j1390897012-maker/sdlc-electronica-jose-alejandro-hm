@@ -12,4 +12,3 @@ class ParserJSON(Parser):
         # Implementación específica para I2C
         return {"formato": "json"}
 
-
