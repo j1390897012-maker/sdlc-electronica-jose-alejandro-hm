@@ -11,7 +11,7 @@ class DispositivoIoT:
     def mostrar(self):
         return {"mensaje": "Mostrando datos en pantalla"}
 
-class SensorTemperatura(DispositivoIoT):
+class SensorTemperaturamal(DispositivoIoT):
     def leer(self):
         return {"temperatura": 25}
 
@@ -58,7 +58,7 @@ class Nube:
         return {"mensaje": "Guardado en la nube"}
 
 
-class MemoriaLocal:
+class MemoriaLocalMal:
     def guardar(self, datos):
         return {"mensaje": "Guardado en memoria local"}
 
@@ -81,7 +81,7 @@ class Almacenamiento:
     def guardar(self, datos):
         pass
 
-class Nube(Almacenamiento):
+class NubeBien(Almacenamiento):
     def guardar(self, datos):
         return {"mensaje": "Guardado en la nube"}
 
@@ -89,7 +89,7 @@ class MemoriaLocal(Almacenamiento):
     def guardar(self, datos):
         return {"mensaje": "Guardado en memoria local"}
 
-class Monitoreo:
+class MonitoreoBien:
     def __init__(self, almacenamiento):
         self.almacenamiento = almacenamiento
 

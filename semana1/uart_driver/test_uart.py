@@ -1,4 +1,4 @@
-from config import *
+from config import UartConfig
 import pytest
 
 def test_uart_config():

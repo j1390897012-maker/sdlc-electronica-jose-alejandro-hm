@@ -1,35 +1,55 @@
-from device import UartDevice
-from config import UartConfig
-from parser import ParserCSV, ParserJSON
 
-def test_uart_device_CSV():
+from config import UartConfig
+from device import UartDevice
+from parsers import ModbusParser, NMEAParser
+
+def test_uart_device_config():
+
     config = UartConfig(
         baud_rate=9600,
         data_bits=8,
         stop_bits=1,
-        parity='N'
+        parity="N"
     )
 
-    parser = ParserCSV()
+    parser = ModbusParser()
 
-    uart = UartDevice(config, parser)
+    device = UartDevice(config, parser)
 
-    resultado = uart.recibir_datos("25.7")
+    assert device.config == config
 
-    assert resultado["formato"] == "csv"
+def test_uart_device_modbus():
 
+    config = UartConfig(
+        baud_rate=9600,
+        data_bits=8,
+        stop_bits=1,
+        parity="N"
+    )
 
-def test_uart_device_JSON():
-        config = UartConfig(
-            baud_rate=9600,
-            data_bits=8,
-            stop_bits=1,
-            parity='N'
-        )
+    parser = ModbusParser()
 
-        parser = ParserJSON()
+    device = UartDevice(config, parser)
 
-        uart = UartDevice(config, parser)
+    resultado = device.receive("TEMP:25")
 
-        resultado = uart.recibir_datos("24.54")
-        assert resultado["formato"] == "json"
+    assert resultado["temperatura"] == 25
+
+def test_uart_device_nmea():
+
+    config = UartConfig(
+        baud_rate=9600,
+        data_bits=8,
+        stop_bits=1,
+        parity="N"
+    )
+
+    parser = NMEAParser()
+
+    device = UartDevice(config, parser)
+
+    resultado = device.receive(
+        "GPS:19.432,-99.133"
+    )
+
+    assert resultado["latitud"] == 19.432

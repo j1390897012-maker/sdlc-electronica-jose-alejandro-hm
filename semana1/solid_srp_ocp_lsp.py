@@ -34,7 +34,7 @@ class Guardador:
         return {"mensaje": "Temp y Hum guardadas"}
 
 
-class Wifi:
+class WifiBueno:
     def enviar(self, datos):
         return {"mensaje": "Temp y Hum enviadas"}
 

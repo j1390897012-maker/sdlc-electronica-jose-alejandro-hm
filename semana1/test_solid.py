@@ -1,7 +1,6 @@
 from solid_srp_ocp_lsp import (
     Sensor,
     Procesador,
-    Guardador,
     Wifi,
     Bluetooth,
     LoRa,
