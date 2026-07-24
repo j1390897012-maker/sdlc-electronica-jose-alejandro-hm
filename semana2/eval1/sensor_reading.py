@@ -1,16 +1,14 @@
-from sensor_reading import SensorReading
 
 
+class SensorReading:
+    def __init__(
+        self, 
+        sensor_id: str,
+         value: float,
+          timestamp:str) -> None:
+        self.sensor_id = sensor_id
+        self.value = value
+        self.timestamp = timestamp
+        
 
 
-
-def test_create_sensor_reading() -> None:
-    reading = SensorReading(
-        sensor_id="TEMP-01",
-        value=25.5,
-        timestamp="2026-07-24 16:30"
-    )
-
-    assert reading.sensor_id == "TEMP-01"
-    assert reading.value == 25.5
-    assert reading.timestamp == "2026-07-24 16:30"
