@@ -1,10 +1,20 @@
+from collections.abc import Sequence
+from typing import Protocol
+
+from sensor_reading import SensorReading
 from sensor_simulador import SensorSimulador
 
+
+class Sensor(Protocol):
+    def obtener_lectura(self) -> SensorReading:
+        ...
+
+
 class SimuladorSistema:
-    def __init__(self, sensores):
+    def __init__(self, sensores: Sequence[Sensor]) -> None:
         self.sensores = sensores
 
-    def ejecutar_ciclo(self):
+    def ejecutar_ciclo(self)-> list[SensorReading]:
         lecturas = []
         for sensor in self.sensores:
             lectura = sensor.obtener_lectura()
@@ -12,7 +22,7 @@ class SimuladorSistema:
         return lecturas
 
 
-def crear_sensores(cantidad):
+def crear_sensores(cantidad: int)-> list[SensorSimulador]:
     sensores = []
 
     for i in range(cantidad):
@@ -26,5 +36,6 @@ def crear_sensores(cantidad):
 
         sensores.append(sensor)
     return sensores
+
 
 

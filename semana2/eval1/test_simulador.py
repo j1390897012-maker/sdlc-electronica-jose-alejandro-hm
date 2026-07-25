@@ -1,9 +1,9 @@
-from simulador_sistema import SimuladorSistema, crear_sensores
 from anomaly_detector import AnomalyDetector
 from sensor_reading import SensorReading
+from simulador_sistema import SimuladorSistema, crear_sensores
 
 
-def test_simulacion_10_sensores_60_ciclos():
+def test_simulacion_10_sensores_60_ciclos()-> None:
 
     sensores = crear_sensores(10)
 
@@ -17,7 +17,7 @@ def test_simulacion_10_sensores_60_ciclos():
     lecturas_totales = 0
     alertas = 0
 
-    for ciclo in range(60):
+    for _ciclo in range(60):
 
         lecturas = sistema.ejecutar_ciclo()
 
@@ -35,10 +35,10 @@ def test_simulacion_10_sensores_60_ciclos():
 
 class SensorSimuladorError:
 
-    def __init__(self, sensor_id):
+    def __init__(self, sensor_id:str)-> None:
         self.sensor_id = sensor_id
 
-    def obtener_lectura(self):
+    def obtener_lectura(self)-> SensorReading:
 
         return SensorReading(
             sensor_id=self.sensor_id,
@@ -48,7 +48,7 @@ class SensorSimuladorError:
         )
 
 
-def test_simulacion_detecta_alertas():
+def test_simulacion_detecta_alertas()-> None:
 
     sensores = [
         SensorSimuladorError("sensor_error")

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from alert_manager import AlertManager, AlertStrategy, FileAlert
+from alert_manager import AlertManager, FileAlert
 from fake_alert_strategy import FakeAlertStrategy
 
 

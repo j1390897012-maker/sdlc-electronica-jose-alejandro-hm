@@ -1,5 +1,5 @@
-from sensor_reading import SensorReading
 from anomaly_detector import AnomalyDetector
+from sensor_reading import SensorReading
 
 
 def test_detecta_temperatura_alta() -> None:

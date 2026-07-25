@@ -1,8 +1,8 @@
-from sensor_simulador import SensorSimulador
 from sensor_reading import SensorReading
+from sensor_simulador import SensorSimulador
 
 
-def test_sensor_simulador():
+def test_sensor_simulador()-> None:
     simulador = SensorSimulador(
     media_temperatura=25.5,
     desviacion_temperatura=3,
