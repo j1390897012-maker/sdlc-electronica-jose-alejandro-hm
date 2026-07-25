@@ -1,15 +1,7 @@
 from pathlib import Path
 
 from alert_manager import AlertManager, AlertStrategy, FileAlert
-
-
-class FakeAlertStrategy(AlertStrategy):
-
-    def __init__(self) -> None:
-        self.message: str | None = None
-
-    def send(self, message: str) -> None:
-        self.message = message
+from fake_alert_strategy import FakeAlertStrategy
 
 
 def test_alert_manager_sends_alert() -> None:
