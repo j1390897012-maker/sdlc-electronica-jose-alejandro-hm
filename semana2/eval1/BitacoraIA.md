@@ -127,15 +127,6 @@ Se comprendió el flujo de objetos y se obtuvo una estructura con menor acoplami
 
 ---
 
-# Reflexión final
-
-La IA fue utilizada como herramienta de apoyo para comprender conceptos, revisar decisiones de diseño y analizar errores encontrados durante el desarrollo.
-
-Las respuestas fueron revisadas antes de aplicar cambios. Cuando una explicación no era suficiente, se solicitaron ejemplos del flujo interno del programa para comprender el comportamiento antes de modificar el código.
-
-El uso de IA permitió mejorar la comprensión del diseño del sistema, pero las decisiones finales de implementación fueron evaluadas y adaptadas según las necesidades del proyecto.
-
-
 # Entrada 6 – Revisión y mejora de la Bitácora de IA
 
 ## Uso de IA:
@@ -164,3 +155,12 @@ Se reorganizó la Bitácora de IA utilizando una estructura más detallada para 
 
 ## Resultado:
 Se obtuvo una bitácora más clara y profesional, donde se evidencia el proceso de uso de IA durante el desarrollo del proyecto y el criterio utilizado para aceptar o modificar las recomendaciones recibidas.
+
+# Reflexión final
+
+La IA fue utilizada como herramienta de apoyo para comprender conceptos, revisar decisiones de diseño y analizar errores encontrados durante el desarrollo.
+
+Las respuestas fueron revisadas antes de aplicar cambios. Cuando una explicación no era suficiente, se solicitaron ejemplos del flujo interno del programa para comprender el comportamiento antes de modificar el código.
+
+El uso de IA permitió mejorar la comprensión del diseño del sistema, pero las decisiones finales de implementación fueron evaluadas y adaptadas según las necesidades del proyecto.
+
