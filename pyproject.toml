@@ -1,0 +1,15 @@
+[tool.ruff]
+lint.select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B"
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=. --cov-fail-under=80"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = "^(semana0|semana1)/"
