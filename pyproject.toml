@@ -9,6 +9,9 @@ lint.select = [
 
 [tool.pytest.ini_options]
 addopts = "--cov=. --cov-fail-under=80"
+pythonpath = [
+    "."
+]
 
 [tool.mypy]
 disallow_untyped_defs = true
