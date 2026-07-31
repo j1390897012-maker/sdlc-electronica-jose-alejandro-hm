@@ -16,3 +16,9 @@ pythonpath = [
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = "^(semana0|semana1)/"
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+]

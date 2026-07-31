@@ -37,8 +37,39 @@ class FakeReadingRepository:
             if reading.sensor_id == sensor_id
         ]
 
-    def get_by_id(self, reading_id: int) -> ReadingModel | None:
+    def get(self, reading_id: int) -> ReadingModel | None:
         return next(
             (reading for reading in self.readings if reading.id == reading_id),
             None,
         )
+
+
+    def update(
+    self,
+    reading_id: int,
+    value: float | None = None,
+    unit: str | None = None,
+) -> ReadingModel | None:
+
+        reading = self.get(reading_id)
+
+        if reading is None:
+            return None
+
+        if value is not None:
+            reading.value = value
+
+        if unit is not None:
+            reading.unit = unit
+
+        return reading
+
+    def delete(self, reading_id: int) -> bool:
+
+        reading = self.get(reading_id)
+
+        if reading is None:
+            return False
+
+        self.readings.remove(reading)
+        return True
