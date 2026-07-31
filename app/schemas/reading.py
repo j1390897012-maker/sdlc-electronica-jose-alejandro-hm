@@ -2,7 +2,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class SensorReadingIn(BaseModel):
-    sensor_id: int = Field(..., examples=[1])
     value: float
     unit: str = Field(default="C", examples=["C"])
 
@@ -33,6 +32,7 @@ class SensorReadingUpdate(BaseModel):
 
 
 class SensorReadingOut(SensorReadingIn):
+    sensor_id: int
     id: int
 
     model_config = ConfigDict(from_attributes=True)

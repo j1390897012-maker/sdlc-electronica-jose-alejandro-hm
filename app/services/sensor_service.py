@@ -34,6 +34,35 @@ class SensorService:
         unit: str | None = None,
     ) -> SensorModel | None:
 
+        sensor = self._repo.get(sensor_id)
+
+        if sensor is None:
+            return None
+
+        new_sensor_type = (
+            sensor_type
+            if sensor_type is not None
+            else sensor.sensor_type
+        )
+
+        new_unit = (
+            unit
+            if unit is not None
+            else sensor.unit
+        )
+
+        valid_units = {
+            "temperature": {"C", "F"},
+            "humidity": {"%"},
+            "pressure": {"hPa"},
+        }
+
+        if new_unit not in valid_units[new_sensor_type]:
+            raise ValueError(
+                f"Unidad {new_unit!r} no válida para "
+                f"{new_sensor_type!r}"
+            )
+
         return self._repo.update(
             sensor_id,
             name,

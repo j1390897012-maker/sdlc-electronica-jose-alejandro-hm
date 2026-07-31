@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -11,14 +11,20 @@ class ReadingModel(Base):
     __tablename__ = "readings"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+
     sensor_id: Mapped[int] = mapped_column(
         ForeignKey("sensors.id"),
         index=True,
     )
+
     value: Mapped[float]
-    unit: Mapped[str] = mapped_column(String(20))
+
+    unit: Mapped[str] = mapped_column(
+        String(20),
+    )
+
     created_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
+        default=lambda: datetime.now(UTC),
     )
 
     sensor: Mapped["SensorModel"] = relationship(

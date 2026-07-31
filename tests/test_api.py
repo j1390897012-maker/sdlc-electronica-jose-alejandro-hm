@@ -1,8 +1,45 @@
-from fastapi.testclient import TestClient
+import uuid
 
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.db import Base, get_db
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def setup_test_db():
+    test_engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    
+    TestingSessionLocal = sessionmaker(
+        bind=test_engine,
+        expire_on_commit=False,
+    )
+    
+    Base.metadata.create_all(bind=test_engine)
+    
+    def override_get_db():
+        db = TestingSessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+            
+    app.dependency_overrides[get_db] = override_get_db
+    
+    yield
+    
+    Base.metadata.drop_all(bind=test_engine)
+    app.dependency_overrides.clear()
 
 
 def test_health() -> None:
@@ -10,6 +47,7 @@ def test_health() -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
 
 def test_get_reading_no_existente() -> None:
     response = client.get("/readings/999")
@@ -19,11 +57,25 @@ def test_get_reading_no_existente() -> None:
         "detail": "Lectura no encontrada"
     }
 
+
 def test_post_reading() -> None:
-    response = client.post(
-        "/readings/",
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+    sensor_response = client.post(
+        "/sensors/",
         json={
-            "sensor_id": 1,
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+        },
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.post(
+        f"/sensors/{sensor_id}/readings",
+        json={
             "value": 25.5,
             "unit": "C",
         },
@@ -33,35 +85,69 @@ def test_post_reading() -> None:
 
     data = response.json()
 
-    assert data["sensor_id"] == 1
+    assert data["sensor_id"] == sensor_id
     assert data["value"] == 25.5
     assert data["unit"] == "C"
     assert "id" in data
 
+
 def test_post_reading_rechaza_cero_absoluto() -> None:
-    response = client.post(
-        "/readings/",
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+    sensor_response = client.post(
+        "/sensors/",
         json={
-            "sensor_id": 1,
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+        },
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.post(
+        f"/sensors/{sensor_id}/readings",
+        json={
             "value": -300,
             "unit": "C",
         },
     )
 
-    assert response.json()["detail"][0]["msg"] == (
-    "Value error, El valor no puede estar por debajo del cero absoluto"
-            )
+    assert response.status_code == 422
+
+    detail = response.json()["detail"]
+
+    assert detail[0]["msg"] == (
+        "Value error, El valor no puede estar por debajo del "
+        "cero absoluto"
+    )
 
 
 def test_put_reading_actualiza_valor() -> None:
-    response = client.post(
-        "/readings/",
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+    sensor_response = client.post(
+        "/sensors/",
         json={
-            "sensor_id": 2,
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+        },
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.post(
+        f"/sensors/{sensor_id}/readings",
+        json={
             "value": 20,
             "unit": "C",
         },
     )
+
+    assert response.status_code == 201
 
     reading_id = response.json()["id"]
 
@@ -77,20 +163,35 @@ def test_put_reading_actualiza_valor() -> None:
     data = response.json()
 
     assert data["id"] == reading_id
-    assert data["sensor_id"] == 2
+    assert data["sensor_id"] == sensor_id
     assert data["value"] == 25
     assert data["unit"] == "C"
 
 
 def test_delete_reading_elimina_lectura() -> None:
-    response = client.post(
-        "/readings/",
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+    sensor_response = client.post(
+        "/sensors/",
         json={
-            "sensor_id": 3,
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+        },
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.post(
+        f"/sensors/{sensor_id}/readings",
+        json={
             "value": 30,
             "unit": "C",
         },
     )
+
+    assert response.status_code == 201
 
     reading_id = response.json()["id"]
 

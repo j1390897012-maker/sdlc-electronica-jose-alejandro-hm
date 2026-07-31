@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.repositories.sql_reading_repository import SQLReadingRepository
+from app.repositories.sql_sensor_repository import SQLSensorRepository
 from app.schemas.reading import (
     SensorReadingIn,
     SensorReadingOut,
@@ -13,7 +14,6 @@ from app.schemas.reading import (
 from app.services.reading_service import ReadingService
 
 router = APIRouter(
-    prefix="/readings",
     tags=["readings"],
 )
 
@@ -21,11 +21,19 @@ router = APIRouter(
 def get_reading_service(
     db: Session = Depends(get_db),
 ) -> ReadingService:
-    repo = SQLReadingRepository(db)
-    return ReadingService(repo)
+    reading_repo = SQLReadingRepository(db)
+    sensor_repo = SQLSensorRepository(db)
+
+    return ReadingService(
+        reading_repo,
+        sensor_repo,
+    )
 
 
-@router.get("/{reading_id}", response_model=SensorReadingOut)
+@router.get(
+    "/readings/{reading_id}",
+    response_model=SensorReadingOut,
+)
 def get_reading(
     reading_id: int,
     service: ReadingService = Depends(get_reading_service),
@@ -42,7 +50,7 @@ def get_reading(
 
 
 @router.get(
-    "/sensor/{sensor_id}",
+    "/sensors/{sensor_id}/readings",
     response_model=list[SensorReadingOut],
 )
 def list_readings_for_sensor(
@@ -53,7 +61,6 @@ def list_readings_for_sensor(
     date_to: datetime | None = Query(default=None),
     service: ReadingService = Depends(get_reading_service),
 ) -> list[SensorReadingOut]:
-
     readings = service.list_for_sensor(
         sensor_id,
         limit,
@@ -68,19 +75,30 @@ def list_readings_for_sensor(
     ]
 
 
-@router.post("/", response_model=SensorReadingOut, status_code=201)
+@router.post(
+    "/sensors/{sensor_id}/readings",
+    response_model=SensorReadingOut,
+    status_code=201,
+)
 def create_reading(
+    sensor_id: int,
     reading: SensorReadingIn,
     service: ReadingService = Depends(get_reading_service),
 ) -> SensorReadingOut:
     try:
         result = service.record(
-            reading.sensor_id,
+            sensor_id,
             reading.value,
             reading.unit,
         )
 
         return SensorReadingOut.model_validate(result)
+
+    except LookupError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
 
     except ValueError as error:
         raise HTTPException(
@@ -89,7 +107,10 @@ def create_reading(
         ) from error
 
 
-@router.patch("/{reading_id}", response_model=SensorReadingOut)
+@router.patch(
+    "/readings/{reading_id}",
+    response_model=SensorReadingOut,
+)
 def update_reading(
     reading_id: int,
     reading: SensorReadingUpdate,
@@ -110,6 +131,12 @@ def update_reading(
 
         return SensorReadingOut.model_validate(result)
 
+    except LookupError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+
     except ValueError as error:
         raise HTTPException(
             status_code=400,
@@ -117,7 +144,10 @@ def update_reading(
         ) from error
 
 
-@router.delete("/{reading_id}", status_code=204)
+@router.delete(
+    "/readings/{reading_id}",
+    status_code=204,
+)
 def delete_reading(
     reading_id: int,
     service: ReadingService = Depends(get_reading_service),

@@ -1,3 +1,5 @@
+import pytest
+
 from app.repositories.fake_sensor_repository import FakeSensorRepository
 from app.services.sensor_service import SensorService
 
@@ -78,3 +80,35 @@ def test_delete_sensor() -> None:
 
     assert service.delete(created.id) is True
     assert service.get(created.id) is None
+
+
+def test_update_sensor_rechaza_unidad_incompatible() -> None:
+    service = create_service()
+
+    created = service.create(
+        "TEMP-01",
+        "temperature",
+        "C",
+    )
+
+    with pytest.raises(ValueError):
+        service.update(
+            created.id,
+            unit="%",
+        )
+
+
+def test_update_sensor_rechaza_cambio_de_tipo_incompatible() -> None:
+    service = create_service()
+
+    created = service.create(
+        "TEMP-01",
+        "temperature",
+        "C",
+    )
+
+    with pytest.raises(ValueError):
+        service.update(
+            created.id,
+            sensor_type="humidity",
+        )

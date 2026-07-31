@@ -1,10 +1,11 @@
-from collections.abc import Generator
+
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
-from app.db import SessionLocal
+from app.db import get_db
 from app.repositories.sql_sensor_repository import SQLSensorRepository
-from app.schemas.sensor import SensorCreate, SensorOut
+from app.schemas.sensor import SensorCreate, SensorOut, SensorUpdate
 from app.services.sensor_service import SensorService
 
 router = APIRouter(
@@ -13,14 +14,12 @@ router = APIRouter(
 )
 
 
-def get_sensor_service() -> Generator[SensorService, None, None]:
-    session = SessionLocal()
+def get_sensor_service(
+    db: Session = Depends(get_db),
+) -> SensorService:
+    repo = SQLSensorRepository(db)
+    return SensorService(repo)
 
-    try:
-        repo = SQLSensorRepository(session)
-        yield SensorService(repo)
-    finally:
-        session.close()
 
 @router.post(
     "/",
@@ -87,24 +86,30 @@ def get_sensor(
 )
 def update_sensor(
     sensor_id: int,
-    sensor: SensorCreate,
+    sensor: SensorUpdate,
     service: SensorService = Depends(get_sensor_service),
 ) -> SensorOut:
-    result = service.update(
-        sensor_id,
-        sensor.name,
-        sensor.sensor_type,
-        sensor.unit,
-    )
-
-    if result is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Sensor no encontrado",
+    try:
+        result = service.update(
+            sensor_id,
+            sensor.name,
+            sensor.sensor_type,
+            sensor.unit,
         )
 
-    return SensorOut.model_validate(result)
+        if result is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Sensor no encontrado",
+            )
 
+        return SensorOut.model_validate(result)
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
 
 @router.delete(
     "/{sensor_id}",
@@ -121,3 +126,4 @@ def delete_sensor(
             status_code=404,
             detail="Sensor no encontrado",
         )
+

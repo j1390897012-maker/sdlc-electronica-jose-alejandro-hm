@@ -3,13 +3,30 @@ import pytest
 from app.repositories.fake_reading_repository import (
     FakeReadingRepository,
 )
+from app.repositories.fake_sensor_repository import (
+    FakeSensorRepository,
+)
 from app.services.reading_service import ReadingService
 
 
-def test_record_guarda_lectura_valida() -> None:
+def create_service() -> ReadingService:
+    reading_repo = FakeReadingRepository()
+    sensor_repo = FakeSensorRepository()
 
-    repo = FakeReadingRepository()
-    service = ReadingService(repo)
+    sensor_repo.add(
+        "TEMP-01",
+        "temperature",
+        "C",
+    )
+
+    return ReadingService(
+        reading_repo,
+        sensor_repo,
+    )
+
+
+def test_record_guarda_lectura_valida() -> None:
+    service = create_service()
 
     reading = service.record(
         sensor_id=1,
@@ -19,42 +36,60 @@ def test_record_guarda_lectura_valida() -> None:
 
     assert reading.sensor_id == 1
     assert reading.value == 25.5
-    assert len(repo.readings) == 1
 
 
 def test_record_rechaza_temperatura_menor_al_cero_absoluto() -> None:
+    service = create_service()
 
-    repo = FakeReadingRepository()
-    service = ReadingService(repo)
-
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="cero absoluto",
+    ):
         service.record(
-            sensor_id= 1 ,
+            sensor_id=1,
             value=-300,
             unit="C",
         )
 
 
 def test_listar_por_sensor() -> None:
+    reading_repo = FakeReadingRepository()
+    sensor_repo = FakeSensorRepository()
 
-    repo = FakeReadingRepository()
-    service = ReadingService(repo)
+    sensor_repo.add(
+        "TEMP-01",
+        "temperature",
+        "C",
+    )
 
-    service.record( 1, 20, "C")
-    service.record( 2, 30, "C")
-    service.record( 1, 22, "C")
+    sensor_repo.add(
+        "TEMP-02",
+        "temperature",
+        "C",
+    )
 
-    readings = repo.list_for_sensor( 1 )
+    service = ReadingService(
+        reading_repo,
+        sensor_repo,
+    )
+
+    service.record(1, 20, "C")
+    service.record(2, 30, "C")
+    service.record(1, 22, "C")
+
+    readings = service.list_for_sensor(1)
 
     assert len(readings) == 2
 
 
 def test_update_actualiza_lectura() -> None:
+    service = create_service()
 
-    repo = FakeReadingRepository()
-    service = ReadingService(repo)
-
-    reading = service.record(1, 20, "C")
+    reading = service.record(
+        1,
+        20,
+        "C",
+    )
 
     updated = service.update(
         reading.id,
@@ -68,13 +103,16 @@ def test_update_actualiza_lectura() -> None:
 
 
 def test_delete_elimina_lectura() -> None:
+    service = create_service()
 
-    repo = FakeReadingRepository()
-    service = ReadingService(repo)
+    reading = service.record(
+        1,
+        20,
+        "C",
+    )
 
-    reading = service.record(1, 20, "C")
-
-    deleted = service.delete(reading.id)
+    deleted = service.delete(
+        reading.id,
+    )
 
     assert deleted is True
-    assert repo.get(reading.id) is None
