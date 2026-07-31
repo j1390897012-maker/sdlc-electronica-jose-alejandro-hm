@@ -249,6 +249,43 @@ def test_post_reading() -> None:
 
 
 
+
+def test_post_reading_rechaza_unidad_invalida() -> None:
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+
+    sensor_response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+        },
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.post(
+        f"/sensors/{sensor_id}/readings",
+        json={
+            "value": 25,
+            "unit": "%",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": (
+            "Unidad '%' no válida para "
+            "sensor de tipo 'temperature'"
+        )
+    }
+
+
+
+
+
 def test_post_reading_sensor_no_existe() -> None:
     response = client.post(
         "/sensors/999/readings",
