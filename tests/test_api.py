@@ -59,6 +59,161 @@ def test_get_reading_no_existente() -> None:
     }
 
 
+
+
+def test_post_sensor_duplicado_devuelve_409() -> None:
+    sensor = {
+        "name": "TEMP-DUPLICADO",
+        "sensor_type": "temperature",
+        "unit": "C",
+    }
+    primera_respuesta = client.post(
+        "/sensors/",
+        json=sensor,
+    )
+
+    assert primera_respuesta.status_code == 201
+
+    segunda_respuesta = client.post(
+        "/sensors/",
+        json=sensor,
+    )
+
+    assert segunda_respuesta.status_code == 409
+    assert segunda_respuesta.json() == {
+        "detail": "Ya existe un sensor con nombre 'TEMP-DUPLICADO'"
+    }
+
+
+def test_crud_sensor_completo() -> None:
+    sensor = {
+        "name": "TEMP-CRUD",
+        "sensor_type": "temperature",
+        "unit": "C",
+    }
+    # Crear
+    response = client.post(
+        "/sensors/",
+        json=sensor,
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+    sensor_id = data["id"]
+
+    assert data["name"] == "TEMP-CRUD"
+    assert data["sensor_type"] == "temperature"
+    assert data["unit"] == "C"
+
+    # Listar
+    response = client.get("/sensors/")
+
+    assert response.status_code == 200
+
+    sensors = response.json()
+
+    assert any(
+        item["id"] == sensor_id
+        for item in sensors
+    )
+
+    # Obtener por ID
+    response = client.get(
+        f"/sensors/{sensor_id}",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == sensor_id
+
+    # Actualizar
+    response = client.patch(
+        f"/sensors/{sensor_id}",
+        json={
+            "name": "TEMP-CRUD-ACTUALIZADO",
+            "unit": "F",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["id"] == sensor_id
+    assert data["name"] == "TEMP-CRUD-ACTUALIZADO"
+    assert data["sensor_type"] == "temperature"
+    assert data["unit"] == "F"
+
+    # Eliminar
+    response = client.delete(
+        f"/sensors/{sensor_id}",
+    )
+
+    assert response.status_code == 204
+
+    # Verificar que ya no existe
+    response = client.get(
+        f"/sensors/{sensor_id}",
+    )
+
+    assert response.status_code == 404
+
+
+def test_list_readings_for_sensor_con_paginacion() -> None:
+    sensor = {
+        "name": "TEMP-PAGINACION",
+        "sensor_type": "temperature",
+        "unit": "C",
+    }
+    sensor_response = client.post(
+        "/sensors/",
+        json=sensor,
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    # Crear tres lecturas
+    for value in (20, 21, 22):
+        response = client.post(
+            f"/sensors/{sensor_id}/readings",
+            json={
+                "value": value,
+                "unit": "C",
+            },
+        )
+
+        assert response.status_code == 201
+
+    # Pedir las primeras dos
+    response = client.get(
+        f"/sensors/{sensor_id}/readings?limit=2&offset=0",
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 2
+    assert [reading["value"] for reading in data] == [20, 21]
+
+    # Saltar las dos primeras y pedir las siguientes
+    response = client.get(
+        f"/sensors/{sensor_id}/readings?limit=2&offset=2",
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["value"] == 22
+
+
+
+
+
 def test_post_reading() -> None:
     unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
     sensor_response = client.post(
