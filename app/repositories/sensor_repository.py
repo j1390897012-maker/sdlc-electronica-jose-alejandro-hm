@@ -16,6 +16,9 @@ class SensorRepository(Protocol):
     def get(self, sensor_id: int) -> SensorModel | None:
         ...
 
+    def get_by_name(self, name: str) -> SensorModel | None:
+        ...
+
     def list(self) -> list[SensorModel]:
         ...
 

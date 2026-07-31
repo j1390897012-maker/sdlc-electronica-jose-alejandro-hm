@@ -1,12 +1,10 @@
-
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.repositories.sql_sensor_repository import SQLSensorRepository
 from app.schemas.sensor import SensorCreate, SensorOut, SensorUpdate
-from app.services.sensor_service import SensorService
+from app.services.sensor_service import SensorDuplicadoError, SensorService
 
 router = APIRouter(
     prefix="/sensors",
@@ -39,6 +37,11 @@ def create_sensor(
 
         return SensorOut.model_validate(result)
 
+    except SensorDuplicadoError as error:
+        raise HTTPException(
+            status_code=409,
+            detail=str(error),
+        ) from error
     except ValueError as error:
         raise HTTPException(
             status_code=400,
@@ -126,4 +129,3 @@ def delete_sensor(
             status_code=404,
             detail="Sensor no encontrado",
         )
-

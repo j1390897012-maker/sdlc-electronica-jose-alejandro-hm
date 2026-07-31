@@ -36,6 +36,19 @@ class FakeSensorRepository:
             None,
         )
 
+
+    def get_by_name(self, name: str) -> SensorModel | None:
+        return next(
+        (
+            sensor
+            for sensor in self.sensors
+            if sensor.name == name
+        ),
+            None,
+    )
+
+
+
     def list(self) -> list[SensorModel]:
         return self.sensors
 

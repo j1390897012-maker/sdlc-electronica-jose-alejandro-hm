@@ -1,9 +1,10 @@
 import uuid
+from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.db import Base, get_db
@@ -13,7 +14,7 @@ client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def setup_test_db():
+def setup_test_db() -> Generator[None, None, None]:
     test_engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -27,7 +28,7 @@ def setup_test_db():
     
     Base.metadata.create_all(bind=test_engine)
     
-    def override_get_db():
+    def override_get_db() -> Generator[Session, None, None]:
         db = TestingSessionLocal()
         try:
             yield db

@@ -34,6 +34,17 @@ class SQLSensorRepository:
             sensor_id,
         )
 
+
+    def get_by_name(self, name: str) -> SensorModel | None:
+        statement = select(SensorModel).where(
+            SensorModel.name == name
+    )
+
+        return self._session.scalars(statement).first()
+
+
+
+
     def list(self) -> list[SensorModel]:
         statement = select(SensorModel)
 

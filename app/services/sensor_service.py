@@ -2,6 +2,10 @@ from app.models.sensor import SensorModel
 from app.repositories.sensor_repository import SensorRepository
 
 
+class SensorDuplicadoError(Exception):
+    pass
+
+
 class SensorService:
 
     def __init__(self, repo: SensorRepository) -> None:
@@ -13,6 +17,11 @@ class SensorService:
         sensor_type: str,
         unit: str,
     ) -> SensorModel:
+
+        if self._repo.get_by_name(name) is not None:
+            raise SensorDuplicadoError(
+                f"Ya existe un sensor con nombre {name!r}"
+            )
 
         return self._repo.add(
             name,
