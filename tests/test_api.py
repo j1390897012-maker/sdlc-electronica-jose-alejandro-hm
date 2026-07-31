@@ -247,6 +247,25 @@ def test_post_reading() -> None:
     assert "id" in data
 
 
+
+
+def test_post_reading_sensor_no_existe() -> None:
+    response = client.post(
+        "/sensors/999/readings",
+        json={
+            "value": 25,
+            "unit": "C",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": "Sensor no encontrado"
+    }
+
+
+
+
 def test_post_reading_rechaza_cero_absoluto() -> None:
     unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
     sensor_response = client.post(
