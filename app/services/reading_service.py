@@ -28,3 +28,10 @@ class ReadingService:
             value,
             unit
         )
+
+    def get_reading(
+        self,
+        reading_id: int
+    ) -> ReadingModel | None:
+
+        return self._repo.get_by_id(reading_id)

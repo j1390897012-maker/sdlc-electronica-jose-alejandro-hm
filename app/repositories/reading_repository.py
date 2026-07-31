@@ -18,3 +18,9 @@ class ReadingRepository(Protocol):
         sensor_id: str
     ) -> list[ReadingModel]:
         ...
+
+    def get_by_id(
+        self,
+        reading_id: int
+    ) -> ReadingModel | None:
+        ...

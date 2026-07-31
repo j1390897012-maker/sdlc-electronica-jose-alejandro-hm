@@ -36,3 +36,9 @@ class FakeReadingRepository:
             for reading in self.readings
             if reading.sensor_id == sensor_id
         ]
+
+    def get_by_id(self, reading_id: int) -> ReadingModel | None:
+        return next(
+            (reading for reading in self.readings if reading.id == reading_id),
+            None,
+        )
