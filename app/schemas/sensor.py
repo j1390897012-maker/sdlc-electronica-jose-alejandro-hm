@@ -1,5 +1,5 @@
 from typing import Literal
-
+from app.constants import VALID_UNITS
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 SensorType = Literal["temperature", "humidity", "pressure"]
@@ -12,18 +12,11 @@ class SensorCreate(BaseModel):
 
     @model_validator(mode="after")
     def validate_unit(self) -> "SensorCreate":
-        valid_units = {
-            "temperature": {"C", "F"},
-            "humidity": {"%"},
-            "pressure": {"hPa"},
-        }
-
-        if self.unit not in valid_units[self.sensor_type]:
+        if self.unit not in VALID_UNITS[self.sensor_type]:
             raise ValueError(
                 f"Unidad {self.unit!r} no válida para "
                 f"{self.sensor_type!r}"
-            )
-
+        )
         return self
 
 
@@ -37,13 +30,7 @@ class SensorUpdate(BaseModel):
         if self.sensor_type is None or self.unit is None:
             return self
 
-        valid_units = {
-            "temperature": {"C", "F"},
-            "humidity": {"%"},
-            "pressure": {"hPa"},
-        }
-
-        if self.unit not in valid_units[self.sensor_type]:
+        if self.unit not in VALID_UNITS[self.sensor_type]:
             raise ValueError(
                 f"Unidad {self.unit!r} no válida para "
                 f"{self.sensor_type!r}"

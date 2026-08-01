@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from app.constants import VALID_UNITS
 from app.models.reading import ReadingModel
 from app.repositories.reading_repository import ReadingRepository
 from app.repositories.sensor_repository import SensorRepository
@@ -26,13 +26,9 @@ class ReadingService:
         if sensor is None:
             raise LookupError("Sensor no encontrado")
 
-        valid_units = {
-            "temperature": {"C", "F"},
-            "humidity": {"%"},
-            "pressure": {"hPa"},
-        }
+        
 
-        allowed_units = valid_units[sensor.sensor_type]
+        allowed_units = VALID_UNITS[sensor.sensor_type]
 
         if unit not in allowed_units:
             raise ValueError(

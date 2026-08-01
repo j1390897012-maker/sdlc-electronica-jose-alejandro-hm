@@ -57,8 +57,8 @@ def list_readings_for_sensor(
     sensor_id: int,
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    date_from: datetime | None = Query(default=None),
-    date_to: datetime | None = Query(default=None),
+    date_from: datetime | None = Query(default=None, alias="from"),
+    date_to: datetime | None = Query(default=None, alias="to"),
     service: ReadingService = Depends(get_reading_service),
 ) -> list[SensorReadingOut]:
     readings = service.list_for_sensor(

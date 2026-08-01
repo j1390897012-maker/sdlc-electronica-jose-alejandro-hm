@@ -1,3 +1,4 @@
+from app.constants import VALID_UNITS
 from app.models.sensor import SensorModel
 from app.repositories.sensor_repository import SensorRepository
 
@@ -60,13 +61,7 @@ class SensorService:
             else sensor.unit
         )
 
-        valid_units = {
-            "temperature": {"C", "F"},
-            "humidity": {"%"},
-            "pressure": {"hPa"},
-        }
-
-        if new_unit not in valid_units[new_sensor_type]:
+        if new_unit not in VALID_UNITS[new_sensor_type]:
             raise ValueError(
                 f"Unidad {new_unit!r} no válida para "
                 f"{new_sensor_type!r}"
