@@ -1,180 +1,300 @@
-# Bitácora de IA – Semana 3
+# AI LOG — Semana 3
 
-## Desarrollo de la API y organización del proyecto
+## Semana 3 · Entrada 1: Arquitectura de la API y separación en 4 capas
 
----
+* **Prompt enviado a la IA:**
+  "¿Cómo podemos estructurar todo el código para que la API quede separada correctamente en 4 capas? Tengo routers, services, repositories y models, pero quiero asegurarme de que las responsabilidades estén bien separadas y que se aplique DIP."
 
-# Entrada 1 – Comprensión de los temas y preparación del trabajo
+* **Qué propuso la IA:**
+  Propuso mantener una separación clara entre las capas:
+  `routers → services → repositories → models`.
 
-## Uso de IA:
+  Los routers deberían encargarse de HTTP y dependencias de FastAPI, los services de las reglas de negocio, los repositories del acceso a datos y los models de la representación de los datos.
 
-Durante esta etapa utilicé la IA principalmente para entender los temas que se iban a trabajar durante cada día y para tener una idea más clara de qué debía hacer antes de comenzar a programar.
+  También recomendó que los services dependieran de abstracciones/repositorios y no directamente de detalles de infraestructura, para aplicar Dependency Inversion Principle (DIP).
 
-Como varios de los conceptos eran nuevos para mí, primero preguntaba qué significaba cada cosa, para qué servía y cómo se relacionaba con el proyecto que ya estaba desarrollando.
+* **Qué modifiqué:**
+  Revisé la estructura existente y mantuve la separación en cuatro capas. Ajusté los services para recibir los repositories mediante el constructor y mantuve el acceso a datos fuera de la lógica de negocio.
 
-También utilicé la IA para buscar palabras clave que pudiera utilizar en YouTube y complementar la información con videos y explicaciones de otras fuentes.
+* **Cómo quedó:**
+  La API quedó organizada en:
 
-## Preguntas realizadas:
+  `routers → services → repositories → models`
 
-Durante los primeros días pregunté sobre los temas que se tenían que desarrollar. Por ejemplo, cuando tocó trabajar con la API, pregunté qué era una API, cómo funcionaba, cómo se podía lanzar una API en Python y cómo se conectaba con las partes del proyecto que ya tenía.
+  Los routers manejan las solicitudes HTTP, los services concentran las reglas de negocio y los repositories se encargan de la persistencia.
 
-También pregunté sobre los diferentes componentes que se iban a utilizar, qué función tenía cada uno y cómo se relacionaban entre sí.
+* **Verificación:**
 
-Además, cuando algún concepto no me quedaba completamente claro, pedía explicaciones más sencillas y ejemplos relacionados con mi propio proyecto en lugar de quedarme solamente con una definición.
+  * MyPy: OK
+  * Ruff: OK
+  * Pytest: OK
+  * Cobertura: superior al umbral requerido
 
-## Sugerencia recibida:
+## Semana 3 · Entrada 2: Centralización de las unidades válidas
 
-La IA me ayudó primero a dividir los temas en conceptos más pequeños y después relacionarlos con el proyecto.
+* **Prompt enviado a la IA:**
+  "¿Por qué estoy repitiendo las mismas unidades válidas de temperatura, humedad y presión en diferentes archivos? ¿Cómo podemos centralizar esta regla para no tener el mismo diccionario en schemas y services?"
 
-También me proporcionó palabras clave y temas específicos que podía buscar en YouTube para complementar lo aprendido. Esto me permitió no depender solamente de una explicación de IA y buscar otras formas de entender los conceptos.
+* **Qué propuso la IA:**
+  Propuso extraer la definición de unidades válidas a una constante compartida y reutilizarla desde las diferentes capas.
 
-## Decisión tomada:
+  La estructura propuesta fue:
 
-Decidí utilizar la IA principalmente como una herramienta para entender qué iba a hacer antes de comenzar a programarlo.
+  `VALID_UNITS = { ... }`
 
-Cuando un concepto no lo entendía, primero intentaba comprenderlo y después buscaba información adicional mediante videos y otros recursos.
+  de forma que cada tipo de sensor tuviera asociadas únicamente las unidades permitidas.
 
-## Cambios realizados:
+* **Qué modifiqué:**
+  Creé `app/constants.py` con:
 
-Antes de implementar las funcionalidades fui organizando mentalmente qué partes necesitaba modificar y qué relación tenían con el código que ya existía.
+  `temperature → C, F`
+  `humidity → %`
+  `pressure → hPa`
 
-Esto me permitió comenzar la implementación con una idea más clara de lo que debía construir.
+  Después eliminé los diccionarios duplicados de los schemas y services y los sustituí por el uso de `VALID_UNITS`.
 
-## Resultado:
+* **Cómo quedó:**
+  La regla de unidades quedó centralizada en un solo lugar:
 
-La IA me permitió tener una visión inicial de los temas de cada día, entender conceptos que todavía no dominaba y encontrar mejores términos para buscar información adicional.
+  `app/constants.py`
 
-Esto hizo que pudiera comenzar el desarrollo con una idea más clara y no simplemente programar sin saber qué estaba haciendo.
+  y es reutilizada por `SensorCreate`, `SensorUpdate`, `ReadingService` y `SensorService`.
 
----
+  Esto evita que una capa pueda terminar utilizando reglas diferentes a otra.
 
-# Entrada 2 – Organización y planificación de los cambios
+* **Verificación:**
 
-## Uso de IA:
+  * Ruff: OK
+  * MyPy: OK
+  * Pytest: OK
+  * Cobertura: OK
 
-Después de entender los temas que se tenían que trabajar, utilicé la IA para organizar la forma en que iba a realizar los cambios dentro del proyecto.
+## Semana 3 · Entrada 3: Error por nombre incorrecto de la constante
 
-Yo normalmente tenía una idea de cómo quería hacer las cosas y se la explicaba a la IA. A partir de esa idea, revisábamos si la estructura tenía sentido y qué cosas podían agregarse o cambiarse.
+* **Prompt enviado a la IA:**
+  "Ya hice el cambio para centralizar VALID_UNITS, pero pytest me da NameError y aparecen errores con VALID_UNITS_BY_TYPE. ¿Por qué tengo este error si ya hice este cambio?"
 
-## Preguntas realizadas:
+* **Qué propuso la IA:**
+  Revisamos las referencias de la constante en todo el proyecto utilizando una búsqueda recursiva.
 
-Le explicaba a la IA lo que quería conseguir y preguntaba cómo sería mejor organizarlo dentro del proyecto.
+  Se encontró que `app/schemas/sensor.py` todavía tenía una referencia a `VALID_UNITS_BY_TYPE`, mientras que la constante creada realmente se llamaba `VALID_UNITS`.
 
-También preguntaba dónde debía colocar determinada funcionalidad, qué archivos tenían que modificarse y si la forma en que estaba pensando hacerlo podía generar problemas posteriormente.
+* **Qué modifiqué:**
+  Reemplacé las referencias incorrectas para que todos los archivos utilizaran el mismo nombre de constante.
 
-En varias ocasiones yo proponía una estructura y la IA me indicaba que podía funcionar, pero que sería mejor agregar o modificar algunas cosas para mantener una mejor organización.
+  También revisé `sensor_service.py`, donde existía otra inconsistencia en el nombre de la variable utilizada para acceder a las unidades válidas.
 
-## Sugerencia recibida:
+* **Cómo quedó:**
+  Todas las capas utilizan:
 
-La IA me ayudó a dividir las funcionalidades entre diferentes archivos y responsabilidades en lugar de intentar colocar todo en un mismo lugar.
+  `VALID_UNITS`
 
-También me explicó el motivo de realizar determinadas separaciones y cómo los cambios en una parte del proyecto podían afectar a otras partes.
+  y desaparecieron las referencias al nombre inexistente `VALID_UNITS_BY_TYPE`.
 
-## Decisión tomada:
+* **Verificación:**
+  Primero se ejecutaron los tests y se obtuvieron errores.
 
-Acepté algunas de las sugerencias y otras las fui modificando de acuerdo con lo que necesitaba el proyecto.
+  Después de corregir las referencias:
 
-La intención no era simplemente copiar lo que decía la IA, sino utilizar sus propuestas para comparar diferentes formas de realizar una misma funcionalidad y decidir cuál tenía más sentido.
+  * Pytest: 65 passed
+  * Cobertura: 92.76%
+  * MyPy: OK
 
-## Cambios realizados:
+## Semana 3 · Entrada 4: Error en los parámetros de consulta de lecturas
 
-Se reorganizaron diferentes partes de la aplicación relacionadas con modelos, esquemas, servicios, repositorios, routers y pruebas.
+* **Prompt enviado a la IA:**
+  "Tengo que aceptar los parámetros `from` y `to` para filtrar las lecturas por fecha, pero en Python `from` es una palabra reservada. ¿Cómo puedo hacer el alias correctamente en FastAPI?"
 
-También se fueron actualizando las pruebas conforme cambiaba la estructura del sistema.
+* **Qué propuso la IA:**
+  Propuso utilizar `alias` en `Query`, manteniendo nombres válidos para Python y exponiendo los nombres requeridos por la API.
 
-## Resultado:
+* **Qué modifiqué:**
+  Modifiqué el endpoint de lecturas para utilizar:
 
-La organización permitió trabajar de una manera más ordenada y entender mejor qué responsabilidad tenía cada parte del proyecto.
+  `date_from = Query(default=None, alias="from")`
 
-También ayudó a evitar que todo el código terminara dependiendo directamente de una sola clase o archivo.
+  y:
 
----
+  `date_to = Query(default=None, alias="to")`
 
-# Entrada 3 – Corrección, integración y depuración del proyecto
+* **Cómo quedó:**
+  Internamente el código continúa utilizando `date_from` y `date_to`, pero la API acepta los parámetros HTTP:
 
-## Uso de IA:
+  `from`
 
-Esta fue la etapa en la que más utilicé la IA durante el desarrollo.
+  `to`
 
-Durante aproximadamente desde las 10 de la mañana hasta las 5 de la tarde estuve trabajando principalmente en corregir, conectar y depurar los cambios realizados en el proyecto.
+  Esto permite cumplir con la interfaz esperada sin utilizar una palabra reservada de Python como nombre de variable.
 
-El problema principal fue que ya existían varios archivos y carpetas relacionados entre sí. Al modificar una parte, muchas veces era necesario modificar otra parte para que las referencias, llamadas y tipos coincidieran.
+* **Verificación:**
 
-## Problemas encontrados:
+  * Pytest: OK
+  * Tests de paginación y filtrado: OK
+  * MyPy: OK
+  * Ruff: OK
 
-Al cambiar una función o una clase, aparecían errores en otros archivos que dependían de ella.
+## Semana 3 · Entrada 5: Errores de API y códigos HTTP
 
-Por ejemplo, al modificar la forma en que se manejaban las lecturas, también era necesario revisar los servicios, repositorios, routers y pruebas que utilizaban esas funciones.
+* **Prompt enviado a la IA:**
+  "¿Cómo debería manejar los errores de la API para que los errores de negocio no terminen como errores 500? Quiero que los recursos inexistentes, duplicados y datos inválidos devuelvan los códigos HTTP correctos."
 
-Esto provocó varios errores durante el proceso, porque una modificación que parecía pequeña podía afectar diferentes partes del proyecto.
+* **Qué propuso la IA:**
+  Propuso separar los errores de negocio de los errores internos y mapearlos explícitamente en la capa HTTP.
 
-También tuve que revisar constantemente qué archivo llamaba a qué función, qué parámetros esperaba cada método y qué tipo de dato estaba recibiendo.
+  Entre los casos revisados estuvieron:
 
-En algunos momentos utilicé otra inteligencia artificial para ayudarme a separar y analizar partes específicas del código y poder identificar mejor dónde estaba el problema.
+  * recurso inexistente → `404`
+  * conflicto por recurso duplicado → `409`
+  * datos inválidos o reglas de negocio incumplidas → código `4XX` apropiado
 
-## Preguntas realizadas:
+* **Qué modifiqué:**
+  Revisé los routers y services para que las excepciones de las reglas de negocio fueran traducidas a respuestas HTTP apropiadas.
 
-Durante la depuración fui proporcionando los errores y partes del código a la IA para identificar qué estaba fallando.
+  También agregué y ajusté pruebas de integración para comprobar los códigos de estado y no solamente el contenido de las respuestas.
 
-Preguntaba de dónde venía determinado error, qué archivo debía modificarse, si el problema estaba en la llamada entre clases o si existía una incompatibilidad entre los datos que se estaban enviando.
+* **Cómo quedó:**
+  Los errores de negocio dejaron de convertirse indiscriminadamente en errores `500`.
 
-También fui utilizando la IA para revisar los cambios antes de volver a ejecutar las pruebas.
+  Los endpoints devuelven códigos HTTP coherentes con el tipo de fallo y los tests comprueban estos comportamientos.
 
-## Sugerencia recibida:
+* **Verificación:**
 
-La IA me ayudó a seguir las referencias entre archivos y a identificar qué partes tenían que cambiarse juntas.
+  * Tests de API: OK
+  * Tests de integración: OK
+  * Pytest: OK
 
-En lugar de modificar únicamente el archivo donde aparecía el error, se revisaba el recorrido completo de la información para encontrar dónde se originaba realmente el problema.
+## Semana 3 · Entrada 6: Cobertura insuficiente después de corregir la API
 
-## Decisión tomada:
+* **Prompt enviado a la IA:**
+  "Tengo los tests pasando, pero pytest falla porque la cobertura requerida es 80% y tengo 77.62%. ¿Qué significa esto y cómo identificamos qué parte falta cubrir?"
 
-Decidí utilizar la IA como una herramienta de depuración y no solamente como una herramienta para escribir código.
+* **Qué propuso la IA:**
+  Explicó que tener todos los tests en verde no significa necesariamente que la cobertura requerida se haya alcanzado.
 
-Cuando tenía una idea de cómo resolver algo, primero se la explicaba y revisábamos si tenía sentido. Después la implementaba, ejecutaba las pruebas y, si aparecía un error, utilizábamos ese resultado para continuar corrigiendo.
+  Se revisó el reporte de coverage para identificar qué archivos y líneas no estaban siendo ejecutados por las pruebas.
 
-Este proceso se repitió varias veces hasta conseguir que todo funcionara correctamente.
+* **Qué modifiqué:**
+  Revisé los tests de la API y agregué/corrigí los casos necesarios para cubrir los comportamientos que todavía no estaban ejecutándose.
 
-## Cambios realizados:
+  No se intentó simplemente bajar el umbral de cobertura; se mantuvo el requisito del proyecto.
 
-Durante esta jornada se corrigieron diferentes relaciones entre modelos, repositorios, servicios, esquemas, routers y pruebas.
+* **Cómo quedó:**
+  La cobertura pasó de:
 
-También se agregaron validaciones para sensores y lecturas, se modificaron las llamadas de la API y se actualizaron las pruebas para comprobar los nuevos comportamientos.
+  `77.62%`
 
-Después de realizar los cambios se ejecutaron las herramientas de revisión:
+  a:
 
-* Ruff.
-* Mypy.
-* Pytest.
+  `92.76%`
 
-El resultado final fue:
+  manteniendo el umbral requerido de `80%`.
 
-* Ruff: todos los checks pasaron.
-* Mypy: sin errores.
-* Pytest: **58 pruebas aprobadas**.
-* Cobertura total: **87.66%**.
+* **Verificación:**
 
-## Resultado:
+  * Pytest: 65 passed
+  * Coverage: 92.76%
+  * Required coverage: 80%
+  * Resultado: OK
 
-Después de varias horas de correcciones y pruebas, el proyecto quedó funcionando correctamente y los cambios principales pudieron ser guardados en un commit.
+## Semana 3 · Entrada 7: Corrección de Ruff y orden de imports
 
-El commit realizado fue:
+* **Prompt enviado a la IA:**
+  "Ruff me está marcando errores en el código. ¿Qué está mal y cómo puedo corregirlo sin cambiar el comportamiento de la aplicación?"
 
-`4be601f – feat: add sensor and reading validation`
+* **Qué propuso la IA:**
+  Identificó problemas de estilo y orden de imports que podían ser corregidos automáticamente por Ruff.
 
-Esta parte del trabajo me permitió entender que modificar un proyecto que ya tiene varias partes conectadas no consiste únicamente en cambiar el archivo donde quiero agregar algo. También tengo que revisar las relaciones entre las diferentes partes del sistema y comprobar que los cambios no rompan funcionalidades existentes.
+* **Qué modifiqué:**
+  Ejecuté:
 
----
+  `ruff check --fix .`
 
-# Reflexión final
+  Ruff encontró dos errores corregibles y realizó las correcciones.
 
-Durante esta etapa entendí mejor el uso que quiero darle a la inteligencia artificial durante mi aprendizaje y desarrollo.
+  Posteriormente ejecuté nuevamente Ruff para comprobar que no quedaran problemas.
 
-No la estoy utilizando solamente para que escriba código por mí. Principalmente me sirve para **organizar mis ideas, planificar el proyecto, entender conceptos que todavía no comprendo, buscar formas de aprenderlos y acelerar mi producción**.
+* **Cómo quedó:**
+  El proyecto quedó sin errores de Ruff.
 
-Cuando tengo una idea, puedo explicársela a la IA y preguntarle si tiene sentido, cómo podría implementarse y qué problemas podrían aparecer. Después puedo llevar esa idea al código y comprobar realmente si funciona.
+* **Verificación:**
+  `ruff check .`
 
-Si aparecen errores, la IA también me ayuda a analizarlos y encontrar dónde puede estar el problema. De esta manera puedo dedicar menos tiempo a intentar descubrir desde cero dónde está cada error y más tiempo a entender qué está pasando y aprender de la solución.
+  Resultado:
 
-También entendí que la IA no siempre tiene que darme directamente la respuesta final. Muchas veces me sirve más como una herramienta para organizar el problema y explicarme el razonamiento detrás de una solución.
+  `All checks passed!`
 
-En esta etapa, la IA me ayudó a avanzar más rápido, pero las decisiones finales y los cambios realizados en el proyecto fueron revisados por mí y comprobados mediante las pruebas del sistema.
+  También se ejecutó MyPy y se verificó la suite completa de tests.
+
+## Semana 3 · Entrada 8: Verificación final después de todas las correcciones
+
+* **Prompt enviado a la IA:**
+  "Ya corregí los errores de Ruff. ¿Podemos hacer la verificación final de todo el proyecto antes de hacer el commit?"
+
+* **Qué propuso la IA:**
+  Propuso ejecutar las tres verificaciones principales del proyecto:
+
+  1. Ruff
+  2. MyPy
+  3. Pytest con cobertura
+
+  La idea fue no considerar la tarea terminada solamente porque un error concreto desapareciera, sino comprobar que las correcciones no hubieran introducido regresiones.
+
+* **Qué modifiqué:**
+  Ejecuté la verificación completa después de las correcciones.
+
+* **Cómo quedó:**
+
+  **Ruff**
+
+  `All checks passed!`
+
+  **MyPy**
+
+  `Success: no issues found in 23 source files`
+
+  **Pytest**
+
+  `65 passed`
+
+  **Coverage**
+
+  `92.76%`
+
+  con un requisito mínimo de:
+
+  `80%`
+
+* **Verificación final:**
+
+  | Herramienta         | Resultado                 |
+  | ------------------- | ------------------------- |
+  | Ruff                | ✅ All checks passed       |
+  | MyPy                | ✅ 23 archivos sin errores |
+  | Pytest              | ✅ 65 passed               |
+  | Coverage            | ✅ 92.76%                  |
+  | Umbral de cobertura | ✅ 80% requerido           |
+
+  Las advertencias mostradas durante pytest corresponden principalmente a `ResourceWarning` de conexiones SQLite y a una advertencia de compatibilidad entre Starlette/httpx. No provocaron fallos en las pruebas.
+
+## Resultado de la Semana 3
+
+Al finalizar la ronda de correcciones, la API quedó verificada mediante linting, análisis estático y pruebas automatizadas.
+
+Los principales cambios realizados durante la semana fueron:
+
+* Arquitectura en cuatro capas.
+* Separación de responsabilidades entre routers, services, repositories y models.
+* Uso de inyección de dependencias.
+* Centralización de `VALID_UNITS`.
+* Validación de unidades según el tipo de sensor.
+* Validación de límites físicos de las lecturas.
+* Uso de alias `from` / `to` en los parámetros de consulta.
+* Manejo de errores mediante códigos HTTP apropiados.
+* Pruebas de integración con FastAPI `TestClient`.
+* Corrección de problemas detectados por Ruff.
+* Verificación con MyPy.
+* Cobertura superior al umbral requerido.
+
+**Estado final:**
+
+`Ruff ✅ | MyPy ✅ | Pytest ✅ | Coverage 92.76% ✅`
