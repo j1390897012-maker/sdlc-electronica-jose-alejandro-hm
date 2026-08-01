@@ -331,7 +331,34 @@ def test_post_reading_sensor_no_existe() -> None:
         "detail": "Sensor no encontrado"
     }
 
+def test_post_reading_rechaza_presion_negativa() -> None:
+    unique_name = f"PRESS-{uuid.uuid4().hex[:6]}"
 
+    sensor_response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "pressure",
+            "unit": "hPa",
+        },
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.post(
+        f"/sensors/{sensor_id}/readings",
+        json={
+            "value": -1,
+            "unit": "hPa",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "La presión no puede ser negativa"
+    }
 
 
 def test_post_reading_rechaza_cero_absoluto() -> None:
