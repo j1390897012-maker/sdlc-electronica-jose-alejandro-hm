@@ -1,6 +1,8 @@
 from typing import Literal
-from app.constants import VALID_UNITS
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from app.constants import VALID_UNITS
 
 SensorType = Literal["temperature", "humidity", "pressure"]
 
