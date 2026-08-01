@@ -225,12 +225,14 @@
 
   También se ejecutó MyPy y se verificó la suite completa de tests.
 
-## Semana 3 · Entrada 8: Verificación final después de todas las correcciones
+## Semana 3 · Entrada 8: Verificación final y validación de resultados después de todas las correcciones
 
 * **Prompt enviado a la IA:**
+
   "Ya corregí los errores de Ruff. ¿Podemos hacer la verificación final de todo el proyecto antes de hacer el commit?"
 
 * **Qué propuso la IA:**
+
   Propuso ejecutar las tres verificaciones principales del proyecto:
 
   1. Ruff
@@ -240,7 +242,8 @@
   La idea fue no considerar la tarea terminada solamente porque un error concreto desapareciera, sino comprobar que las correcciones no hubieran introducido regresiones.
 
 * **Qué modifiqué:**
-  Ejecuté la verificación completa después de las correcciones.
+
+  Ejecuté `ruff check --fix .` para corregir los errores reportados por Ruff. Después volví a ejecutar Ruff y MyPy y finalmente ejecuté la suite completa de pruebas con `pytest -q`.
 
 * **Cómo quedó:**
 
@@ -274,7 +277,43 @@
   | Coverage            | ✅ 92.76%                  |
   | Umbral de cobertura | ✅ 80% requerido           |
 
-  Las advertencias mostradas durante pytest corresponden principalmente a `ResourceWarning` de conexiones SQLite y a una advertencia de compatibilidad entre Starlette/httpx. No provocaron fallos en las pruebas.
+  Las advertencias mostradas durante pytest correspondieron principalmente a `ResourceWarning` relacionados con conexiones SQLite y a una advertencia de compatibilidad entre Starlette/httpx. No provocaron fallos en las pruebas.
+
+* **Verificación adicional de los resultados de cobertura:**
+
+  Durante la revisión final, la IA cuestionó inicialmente los números registrados en esta bitácora porque ejecutó únicamente:
+
+  `pytest tests/ --collect-only -q`
+
+  Esa ejecución encontró 25 tests, correspondientes únicamente a la carpeta `tests/` de Semana 3, y no representaba la suite completa del proyecto. Además, `--collect-only` solamente recopila las pruebas y no las ejecuta.
+
+  Para comprobar el resultado real, solicité que se repitiera la verificación utilizando exactamente el comando configurado para la suite completa:
+
+  `pytest -q`
+
+  La ejecución produjo nuevamente:
+
+  `65 passed`
+
+  `Total coverage: 92.76%`
+
+  Esto confirmó que los valores registrados en `AI_LOG.md` eran correctos.
+
+  La diferencia quedó explicada de la siguiente manera:
+
+  | Alcance             | Comando            | Resultado          |
+  | ------------------- | ------------------ | ------------------ |
+  | Proyecto completo   | `pytest -q`        | 65 passed · 92.76% |
+  | Semana 3 (`tests/`) | `pytest tests/ -q` | 25 passed          |
+
+  Las pruebas de Semana 0, Semana 1 y Semana 2 permanecen dentro de la suite global del proyecto, por lo que también participan en la ejecución completa y en la cobertura configurada en `pyproject.toml`.
+
+* **Decisión y aprendizaje:**
+
+  No acepté la primera conclusión de la IA sobre una supuesta discrepancia en la cobertura. Pedí verificarla utilizando el mismo comando con el que se había obtenido originalmente el resultado. La segunda comprobación confirmó que el problema estaba en el alcance del comando utilizado para la revisión y no en el código ni en la bitácora.
+
+  Esta revisión reforzó la importancia de verificar las respuestas de la IA mediante comandos reproducibles y contra la configuración real del proyecto, en lugar de asumir que una primera conclusión es correcta.
+
 
 ## Resultado de la Semana 3
 
