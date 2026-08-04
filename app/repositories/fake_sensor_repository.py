@@ -1,7 +1,14 @@
+"""Implementación en memoria de SensorRepository, solo para tests."""
+
 from app.models.sensor import SensorModel
 
 
 class FakeSensorRepository:
+    """Doble de prueba de SensorRepository: guarda todo en una lista en memoria.
+
+    Permite probar SensorService sin base de datos real (ver
+    tests/test_sensor_service.py), pagando el DIP aplicado en el servicio.
+    """
 
     def __init__(self) -> None:
         self.sensors: list[SensorModel] = []

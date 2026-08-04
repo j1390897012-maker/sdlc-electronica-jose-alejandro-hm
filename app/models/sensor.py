@@ -1,3 +1,5 @@
+"""Modelo ORM del recurso Sensor."""
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import String
@@ -10,6 +12,14 @@ if TYPE_CHECKING:
 
 
 class SensorModel(Base):
+    """Mapeo de la tabla `sensors`.
+
+    `name` es único: es la clave de negocio usada para detectar
+    sensores duplicados (ver SensorService.create). La relación
+    con `readings` usa cascade delete-orphan, así que borrar un
+    sensor borra también sus lecturas asociadas.
+    """
+
     __tablename__ = "sensors"
 
     id: Mapped[int] = mapped_column(primary_key=True)

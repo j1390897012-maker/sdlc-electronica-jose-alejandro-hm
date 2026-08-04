@@ -1,3 +1,5 @@
+"""Implementación real de SensorRepository sobre SQLAlchemy."""
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -5,6 +7,7 @@ from app.models.sensor import SensorModel
 
 
 class SQLSensorRepository:
+    """Implementación de SensorRepository respaldada por una base de datos SQL."""
 
     def __init__(self, session: Session) -> None:
         self._session = session

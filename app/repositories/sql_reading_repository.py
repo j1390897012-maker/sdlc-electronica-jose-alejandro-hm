@@ -1,3 +1,5 @@
+"""Implementación real de ReadingRepository sobre SQLAlchemy."""
+
 from datetime import datetime
 
 from sqlalchemy import select
@@ -7,6 +9,7 @@ from app.models.reading import ReadingModel
 
 
 class SQLReadingRepository:
+    """Implementación de ReadingRepository respaldada por una base de datos SQL."""
 
     def __init__(self, session: Session) -> None:
         self._session = session

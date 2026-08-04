@@ -1,3 +1,10 @@
+"""Lógica de negocio del recurso Reading.
+
+Depende de las abstracciones ReadingRepository y SensorRepository
+(Protocol), no de implementaciones concretas — permite probar con
+repositorios fake en memoria, sin base de datos real (DIP).
+"""
+
 from datetime import datetime
 
 from app.constants import VALID_UNITS
@@ -7,6 +14,7 @@ from app.repositories.sensor_repository import SensorRepository
 
 
 class ReadingService:
+    """Orquesta las reglas de negocio del recurso Reading."""
 
     def __init__(
         self,
@@ -22,12 +30,16 @@ class ReadingService:
         value: float,
         unit: str,
     ) -> None:
+        """Valida una lectura contra su sensor: existencia, unidad y
+        rango físico según el tipo (temperatura/humedad/presión).
+
+        Esta validación vive aquí y no en Pydantic porque necesita
+        consultar el sensor en la base de datos para saber su tipo.
+        """
         sensor = self._sensor_repo.get(sensor_id)
 
         if sensor is None:
             raise LookupError("Sensor no encontrado")
-
-        
 
         allowed_units = VALID_UNITS[sensor.sensor_type]
 
@@ -62,6 +74,7 @@ class ReadingService:
         value: float,
         unit: str,
     ) -> ReadingModel:
+        """Registra una lectura nueva, validándola primero contra su sensor."""
         self._validate_reading(
             sensor_id,
             value,
@@ -78,6 +91,7 @@ class ReadingService:
         self,
         reading_id: int,
     ) -> ReadingModel | None:
+        """Obtiene una lectura por id, o None si no existe."""
         return self._repo.get(reading_id)
 
     def list_for_sensor(
@@ -88,6 +102,7 @@ class ReadingService:
         date_from: datetime | None = None,
         date_to: datetime | None = None,
     ) -> list[ReadingModel]:
+        """Lista lecturas de un sensor, con paginación y filtro de fecha."""
         return self._repo.list_for_sensor(
             sensor_id,
             limit,
@@ -102,6 +117,7 @@ class ReadingService:
         value: float | None = None,
         unit: str | None = None,
     ) -> ReadingModel | None:
+        """Actualiza parcialmente una lectura, revalidándola contra su sensor."""
         reading = self._repo.get(reading_id)
 
         if reading is None:
@@ -132,4 +148,5 @@ class ReadingService:
         )
 
     def delete(self, reading_id: int) -> bool:
+        """Elimina una lectura. Devuelve False si no existía."""
         return self._repo.delete(reading_id)
