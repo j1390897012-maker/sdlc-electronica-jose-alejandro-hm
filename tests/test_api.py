@@ -440,3 +440,134 @@ def test_delete_reading_elimina_lectura() -> None:
     )
 
     assert response.status_code == 404
+
+
+def test_post_reading_supera_umbral_marca_alert_triggered() -> None:
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+
+    sensor_response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+            "alert_threshold": 35.0,
+        },
+    )
+
+    assert sensor_response.status_code == 201
+    assert sensor_response.json()["alert_threshold"] == 35.0
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.post(
+        f"/sensors/{sensor_id}/readings",
+        json={
+            "value": 40.0,
+            "unit": "C",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["alert_triggered"] is True
+
+
+def test_post_reading_bajo_umbral_no_dispara_alerta() -> None:
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+
+    sensor_response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+            "alert_threshold": 35.0,
+        },
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.post(
+        f"/sensors/{sensor_id}/readings",
+        json={
+            "value": 20.0,
+            "unit": "C",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["alert_triggered"] is False
+
+
+def test_post_sensor_rechaza_umbral_de_humedad_fuera_de_rango() -> None:
+    unique_name = f"HUM-{uuid.uuid4().hex[:6]}"
+
+    response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "humidity",
+            "unit": "%",
+            "alert_threshold": 150.0,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_post_sensor_rechaza_umbral_de_temperatura_bajo_cero_absoluto() -> None:
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+
+    response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+            "alert_threshold": -300.0,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_post_sensor_rechaza_umbral_de_presion_negativo() -> None:
+    unique_name = f"PRESS-{uuid.uuid4().hex[:6]}"
+
+    response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "pressure",
+            "unit": "hPa",
+            "alert_threshold": -1.0,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_patch_sensor_actualiza_umbral() -> None:
+    unique_name = f"TEMP-{uuid.uuid4().hex[:6]}"
+
+    sensor_response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+            "alert_threshold": 35.0,
+        },
+    )
+
+    sensor_id = sensor_response.json()["id"]
+
+    response = client.patch(
+        f"/sensors/{sensor_id}",
+        json={"alert_threshold": 50.0},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["alert_threshold"] == 50.0

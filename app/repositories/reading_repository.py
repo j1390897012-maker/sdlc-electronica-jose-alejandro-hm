@@ -19,6 +19,7 @@ class ReadingRepository(Protocol):
         sensor_id: int,
         value: float,
         unit: str,
+        alert_triggered: bool = False,
     ) -> ReadingModel:
         """Crea y persiste una lectura nueva."""
         ...

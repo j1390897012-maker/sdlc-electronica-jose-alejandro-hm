@@ -50,5 +50,6 @@ class SensorReadingOut(SensorReadingIn):
 
     sensor_id: int
     id: int
+    alert_triggered: bool = False
 
     model_config = ConfigDict(from_attributes=True)

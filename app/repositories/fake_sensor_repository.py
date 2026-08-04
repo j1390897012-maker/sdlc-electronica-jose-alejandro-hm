@@ -19,6 +19,7 @@ class FakeSensorRepository:
         name: str,
         sensor_type: str,
         unit: str,
+        alert_threshold: float | None = None,
     ) -> SensorModel:
 
         sensor = SensorModel(
@@ -26,6 +27,7 @@ class FakeSensorRepository:
             name=name,
             sensor_type=sensor_type,
             unit=unit,
+            alert_threshold=alert_threshold,
         )
 
         self.sensors.append(sensor)
@@ -65,6 +67,7 @@ class FakeSensorRepository:
         name: str | None = None,
         sensor_type: str | None = None,
         unit: str | None = None,
+        alert_threshold: float | None = None,
     ) -> SensorModel | None:
 
         sensor = self.get(sensor_id)
@@ -80,6 +83,9 @@ class FakeSensorRepository:
 
         if unit is not None:
             sensor.unit = unit
+
+        if alert_threshold is not None:
+            sensor.alert_threshold = alert_threshold
 
         return sensor
 

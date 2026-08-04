@@ -30,6 +30,7 @@ class SensorService:
         name: str,
         sensor_type: str,
         unit: str,
+        alert_threshold: float | None = None,
     ) -> SensorModel:
         """Crea un sensor nuevo, validando que el nombre no esté en uso."""
 
@@ -42,6 +43,7 @@ class SensorService:
             name,
             sensor_type,
             unit,
+            alert_threshold,
         )
 
     def get(self, sensor_id: int) -> SensorModel | None:
@@ -58,6 +60,7 @@ class SensorService:
         name: str | None = None,
         sensor_type: str | None = None,
         unit: str | None = None,
+        alert_threshold: float | None = None,
     ) -> SensorModel | None:
         """Actualiza parcialmente un sensor.
 
@@ -94,6 +97,7 @@ class SensorService:
             name,
             sensor_type,
             unit,
+            alert_threshold,
         )
 
     def delete(self, sensor_id: int) -> bool:

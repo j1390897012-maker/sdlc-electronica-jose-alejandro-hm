@@ -112,3 +112,47 @@ def test_update_sensor_rechaza_cambio_de_tipo_incompatible() -> None:
             created.id,
             sensor_type="humidity",
         )
+
+
+def test_create_sensor_con_umbral() -> None:
+    service = create_service()
+
+    sensor = service.create(
+        "TEMP-01",
+        "temperature",
+        "C",
+        alert_threshold=35.0,
+    )
+
+    assert sensor.alert_threshold == 35.0
+
+
+def test_create_sensor_sin_umbral_queda_en_none() -> None:
+    service = create_service()
+
+    sensor = service.create(
+        "TEMP-01",
+        "temperature",
+        "C",
+    )
+
+    assert sensor.alert_threshold is None
+
+
+def test_update_sensor_cambia_el_umbral() -> None:
+    service = create_service()
+
+    created = service.create(
+        "TEMP-01",
+        "temperature",
+        "C",
+        alert_threshold=35.0,
+    )
+
+    updated = service.update(
+        created.id,
+        alert_threshold=40.0,
+    )
+
+    assert updated is not None
+    assert updated.alert_threshold == 40.0

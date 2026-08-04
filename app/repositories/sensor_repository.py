@@ -19,6 +19,7 @@ class SensorRepository(Protocol):
         name: str,
         sensor_type: str,
         unit: str,
+        alert_threshold: float | None = None,
     ) -> SensorModel:
         """Crea y persiste un sensor nuevo."""
         ...
@@ -41,6 +42,7 @@ class SensorRepository(Protocol):
         name: str | None = None,
         sensor_type: str | None = None,
         unit: str | None = None,
+        alert_threshold: float | None = None,
     ) -> SensorModel | None:
         """Actualiza los campos provistos de un sensor existente."""
         ...

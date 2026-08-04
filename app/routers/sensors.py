@@ -45,6 +45,7 @@ def create_sensor(
             sensor.name,
             sensor.sensor_type,
             sensor.unit,
+            sensor.alert_threshold,
         )
 
         return SensorOut.model_validate(result)
@@ -116,6 +117,7 @@ def update_sensor(
             sensor.name,
             sensor.sensor_type,
             sensor.unit,
+            sensor.alert_threshold,
         )
 
         if result is None:

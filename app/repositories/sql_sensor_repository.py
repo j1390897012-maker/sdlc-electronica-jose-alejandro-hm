@@ -17,12 +17,14 @@ class SQLSensorRepository:
         name: str,
         sensor_type: str,
         unit: str,
+        alert_threshold: float | None = None,
     ) -> SensorModel:
 
         sensor = SensorModel(
             name=name,
             sensor_type=sensor_type,
             unit=unit,
+            alert_threshold=alert_threshold,
         )
 
         self._session.add(sensor)
@@ -61,6 +63,7 @@ class SQLSensorRepository:
         name: str | None = None,
         sensor_type: str | None = None,
         unit: str | None = None,
+        alert_threshold: float | None = None,
     ) -> SensorModel | None:
 
         sensor = self.get(sensor_id)
@@ -76,6 +79,9 @@ class SQLSensorRepository:
 
         if unit is not None:
             sensor.unit = unit
+
+        if alert_threshold is not None:
+            sensor.alert_threshold = alert_threshold
 
         self._session.commit()
         self._session.refresh(sensor)

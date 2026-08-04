@@ -30,6 +30,7 @@ class SensorModel(Base):
     )
     sensor_type: Mapped[str] = mapped_column(String(50))
     unit: Mapped[str] = mapped_column(String(20))
+    alert_threshold: Mapped[float | None] = mapped_column(default=None)
 
     readings: Mapped[list["ReadingModel"]] = relationship(
         back_populates="sensor",

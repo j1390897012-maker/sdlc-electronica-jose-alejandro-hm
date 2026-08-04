@@ -19,11 +19,13 @@ class SQLReadingRepository:
         sensor_id: int,
         value: float,
         unit: str,
+        alert_triggered: bool = False,
     ) -> ReadingModel:
         reading = ReadingModel(
             sensor_id=sensor_id,
             value=value,
             unit=unit,
+            alert_triggered=alert_triggered,
         )
 
         self._session.add(reading)

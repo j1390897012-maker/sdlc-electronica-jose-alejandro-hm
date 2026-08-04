@@ -15,6 +15,11 @@ class SensorCreate(BaseModel):
     name: str = Field(..., examples=["TEMP-01"])
     sensor_type: SensorType
     unit: str = Field(..., examples=["C"])
+    alert_threshold: float | None = Field(
+        default=None,
+        examples=[35.0],
+        description="Valor a partir del cual se dispara una alerta (US-08).",
+    )
 
     @model_validator(mode="after")
     def validate_unit(self) -> "SensorCreate":
@@ -26,6 +31,23 @@ class SensorCreate(BaseModel):
         )
         return self
 
+    @model_validator(mode="after")
+    def validate_alert_threshold(self) -> "SensorCreate":
+        """Rechaza umbrales físicamente imposibles para el tipo de sensor."""
+        if self.alert_threshold is None:
+            return self
+
+        if self.sensor_type == "temperature" and self.alert_threshold < -273.15:
+            raise ValueError("El umbral no puede estar bajo el cero absoluto")
+
+        if self.sensor_type == "humidity" and not 0 <= self.alert_threshold <= 100:
+            raise ValueError("El umbral de humedad debe estar entre 0 y 100")
+
+        if self.sensor_type == "pressure" and self.alert_threshold < 0:
+            raise ValueError("El umbral de presión no puede ser negativo")
+
+        return self
+
 
 class SensorUpdate(BaseModel):
     """Datos opcionales para actualización parcial (PATCH /sensors/{id})."""
@@ -33,6 +55,7 @@ class SensorUpdate(BaseModel):
     name: str | None = None
     sensor_type: SensorType | None = None
     unit: str | None = None
+    alert_threshold: float | None = None
 
     @model_validator(mode="after")
     def validate_unit(self) -> "SensorUpdate":

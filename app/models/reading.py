@@ -36,6 +36,8 @@ class ReadingModel(Base):
         default=lambda: datetime.now(UTC),
     )
 
+    alert_triggered: Mapped[bool] = mapped_column(default=False)
+
     sensor: Mapped["SensorModel"] = relationship(
         back_populates="readings",
     )
