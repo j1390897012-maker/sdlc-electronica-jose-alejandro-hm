@@ -1,3 +1,5 @@
+"""Implementación real de ReadingRepository sobre SQLAlchemy."""
+
 from datetime import datetime
 
 from sqlalchemy import select
@@ -7,6 +9,7 @@ from app.models.reading import ReadingModel
 
 
 class SQLReadingRepository:
+    """Implementación de ReadingRepository respaldada por una base de datos SQL."""
 
     def __init__(self, session: Session) -> None:
         self._session = session
@@ -16,11 +19,13 @@ class SQLReadingRepository:
         sensor_id: int,
         value: float,
         unit: str,
+        alert_triggered: bool = False,
     ) -> ReadingModel:
         reading = ReadingModel(
             sensor_id=sensor_id,
             value=value,
             unit=unit,
+            alert_triggered=alert_triggered,
         )
 
         self._session.add(reading)

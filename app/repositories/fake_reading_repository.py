@@ -1,9 +1,16 @@
+"""Implementación en memoria de ReadingRepository, solo para tests."""
+
 from datetime import datetime
 
 from app.models.reading import ReadingModel
 
 
 class FakeReadingRepository:
+    """Doble de prueba de ReadingRepository: guarda todo en una lista en memoria.
+
+    Permite probar ReadingService sin base de datos real (ver
+    tests/test_reading_service.py), pagando el DIP aplicado en el servicio.
+    """
 
     def __init__(self) -> None:
         self.readings: list[ReadingModel] = []
@@ -14,12 +21,14 @@ class FakeReadingRepository:
         sensor_id: int,
         value: float,
         unit: str,
+        alert_triggered: bool = False,
     ) -> ReadingModel:
         reading = ReadingModel(
             id=self.next_id,
             sensor_id=sensor_id,
             value=value,
             unit=unit,
+            alert_triggered=alert_triggered,
         )
 
         self.readings.append(reading)

@@ -1,7 +1,14 @@
+"""Implementación en memoria de SensorRepository, solo para tests."""
+
 from app.models.sensor import SensorModel
 
 
 class FakeSensorRepository:
+    """Doble de prueba de SensorRepository: guarda todo en una lista en memoria.
+
+    Permite probar SensorService sin base de datos real (ver
+    tests/test_sensor_service.py), pagando el DIP aplicado en el servicio.
+    """
 
     def __init__(self) -> None:
         self.sensors: list[SensorModel] = []
@@ -12,6 +19,7 @@ class FakeSensorRepository:
         name: str,
         sensor_type: str,
         unit: str,
+        alert_threshold: float | None = None,
     ) -> SensorModel:
 
         sensor = SensorModel(
@@ -19,6 +27,7 @@ class FakeSensorRepository:
             name=name,
             sensor_type=sensor_type,
             unit=unit,
+            alert_threshold=alert_threshold,
         )
 
         self.sensors.append(sensor)
@@ -58,6 +67,7 @@ class FakeSensorRepository:
         name: str | None = None,
         sensor_type: str | None = None,
         unit: str | None = None,
+        alert_threshold: float | None = None,
     ) -> SensorModel | None:
 
         sensor = self.get(sensor_id)
@@ -73,6 +83,9 @@ class FakeSensorRepository:
 
         if unit is not None:
             sensor.unit = unit
+
+        if alert_threshold is not None:
+            sensor.alert_threshold = alert_threshold
 
         return sensor
 

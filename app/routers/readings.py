@@ -1,3 +1,10 @@
+"""Endpoints REST del recurso Reading (capa de presentación).
+
+Solo traduce entre HTTP y ReadingService: no contiene lógica de
+negocio. LookupError (sensor no existe) se mapea a 404 y ValueError
+(unidad o rango físico inválido) se mapea a 400.
+"""
+
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -21,6 +28,7 @@ router = APIRouter(
 def get_reading_service(
     db: Session = Depends(get_db),
 ) -> ReadingService:
+    """Inyecta un ReadingService con los repositorios SQL reales (Depends)."""
     reading_repo = SQLReadingRepository(db)
     sensor_repo = SQLSensorRepository(db)
 
@@ -38,6 +46,7 @@ def get_reading(
     reading_id: int,
     service: ReadingService = Depends(get_reading_service),
 ) -> SensorReadingOut:
+    """GET /readings/{id} — obtiene una lectura por id. 404 si no existe."""
     reading = service.get_reading(reading_id)
 
     if reading is None:
@@ -61,6 +70,7 @@ def list_readings_for_sensor(
     date_to: datetime | None = Query(default=None, alias="to"),
     service: ReadingService = Depends(get_reading_service),
 ) -> list[SensorReadingOut]:
+    """GET /sensors/{id}/readings — paginado, con filtro `from`/`to`."""
     readings = service.list_for_sensor(
         sensor_id,
         limit,
@@ -85,6 +95,10 @@ def create_reading(
     reading: SensorReadingIn,
     service: ReadingService = Depends(get_reading_service),
 ) -> SensorReadingOut:
+    """POST /sensors/{id}/readings — registra una lectura.
+
+    404 si el sensor no existe, 400 si el valor/unidad es inválido.
+    """
     try:
         result = service.record(
             sensor_id,
@@ -116,6 +130,10 @@ def update_reading(
     reading: SensorReadingUpdate,
     service: ReadingService = Depends(get_reading_service),
 ) -> SensorReadingOut:
+    """PATCH /readings/{id} — actualiza parcialmente una lectura.
+
+    404 si no existe, 400 si el resultado es inválido.
+    """
     try:
         result = service.update(
             reading_id,
@@ -152,6 +170,7 @@ def delete_reading(
     reading_id: int,
     service: ReadingService = Depends(get_reading_service),
 ) -> None:
+    """DELETE /readings/{id} — elimina una lectura (204, o 404 si no existía)."""
     deleted = service.delete(reading_id)
 
     if not deleted:

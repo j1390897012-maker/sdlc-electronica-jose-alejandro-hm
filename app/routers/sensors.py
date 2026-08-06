@@ -1,3 +1,10 @@
+"""Endpoints REST del recurso Sensor (capa de presentación).
+
+Solo traduce entre HTTP y SensorService: no contiene lógica de
+negocio. Cada excepción de dominio (SensorDuplicadoError, ValueError,
+sensor no encontrado) se mapea aquí a su código HTTP correspondiente.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -15,6 +22,7 @@ router = APIRouter(
 def get_sensor_service(
     db: Session = Depends(get_db),
 ) -> SensorService:
+    """Inyecta un SensorService con el repositorio SQL real (Depends)."""
     repo = SQLSensorRepository(db)
     return SensorService(repo)
 
@@ -28,11 +36,16 @@ def create_sensor(
     sensor: SensorCreate,
     service: SensorService = Depends(get_sensor_service),
 ) -> SensorOut:
+    """POST /sensors — crea un sensor.
+
+    409 si el nombre existe, 400 si la unidad no aplica al tipo.
+    """
     try:
         result = service.create(
             sensor.name,
             sensor.sensor_type,
             sensor.unit,
+            sensor.alert_threshold,
         )
 
         return SensorOut.model_validate(result)
@@ -56,6 +69,7 @@ def create_sensor(
 def list_sensors(
     service: SensorService = Depends(get_sensor_service),
 ) -> list[SensorOut]:
+    """GET /sensors — lista todos los sensores registrados."""
     sensors = service.list()
 
     return [
@@ -72,6 +86,7 @@ def get_sensor(
     sensor_id: int,
     service: SensorService = Depends(get_sensor_service),
 ) -> SensorOut:
+    """GET /sensors/{id} — obtiene un sensor por id. 404 si no existe."""
     sensor = service.get(sensor_id)
 
     if sensor is None:
@@ -92,12 +107,17 @@ def update_sensor(
     sensor: SensorUpdate,
     service: SensorService = Depends(get_sensor_service),
 ) -> SensorOut:
+    """PATCH /sensors/{id} — actualiza parcialmente un sensor.
+
+    404 si no existe, 400 si la combinación tipo/unidad es inválida.
+    """
     try:
         result = service.update(
             sensor_id,
             sensor.name,
             sensor.sensor_type,
             sensor.unit,
+            sensor.alert_threshold,
         )
 
         if result is None:
@@ -122,6 +142,7 @@ def delete_sensor(
     sensor_id: int,
     service: SensorService = Depends(get_sensor_service),
 ) -> None:
+    """DELETE /sensors/{id} — elimina un sensor. 204 si se borró, 404 si no existía."""
     deleted = service.delete(sensor_id)
 
     if not deleted:

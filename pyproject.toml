@@ -7,6 +7,11 @@ lint.select = [
     "B"
 ]
 
+exclude = [
+    "semana0",
+    "semana1",
+]
+
 [tool.pytest.ini_options]
 addopts = "--cov=. --cov-fail-under=80"
 pythonpath = [
