@@ -337,3 +337,421 @@ Los principales cambios realizados durante la semana fueron:
 **Estado final:**
 
 `Ruff ✅ | MyPy ✅ | Pytest ✅ | Coverage 92.76% ✅`
+
+
+
+# BITÁCORA DE IA — SEMANA 4
+
+## DevOps, contenedores y CI/CD
+
+### Entrada 1 — Lunes: Docker desde cero
+
+**Qué necesitaba resolver**
+
+El objetivo del primer día era pasar la aplicación de SensorHub de ejecutarse únicamente en mi entorno local a poder ejecutarse dentro de un contenedor. Antes de comenzar, entendía Docker principalmente como una herramienta para ejecutar aplicaciones aisladas, pero no tenía claro cómo se relacionaban el `Dockerfile`, la imagen y el contenedor.
+
+**Prompt enviado a la IA**
+
+> Quiero comenzar con Docker en mi proyecto SensorHub. Explícame qué problema estamos resolviendo con Docker, qué diferencia hay entre una imagen y un contenedor y qué función tiene cada instrucción del Dockerfile que propone la actividad. Quiero entenderlo aplicado a mi proyecto, no solamente copiar el código.
+
+**Qué propuso la IA**
+
+La IA explicó que el problema que se buscaba resolver era el de “funciona en mi máquina”. La aplicación dependía de una versión específica de Python y de sus bibliotecas, por lo que Docker permitiría empaquetar el entorno de ejecución junto con la aplicación.
+
+También explicó el propósito de cada instrucción del `Dockerfile`, incluyendo la imagen base de Python, el directorio de trabajo, la copia de dependencias, la instalación mediante `pip`, la copia del código y el comando de inicio de Uvicorn.
+
+**Qué implementé**
+
+Creé el `Dockerfile` en la raíz del repositorio y utilicé una imagen `python:3.12-slim`.
+
+La estructura permitió instalar primero `requirements.txt` y posteriormente copiar el código de la aplicación. La IA explicó que este orden no era arbitrario: Docker puede reutilizar las capas anteriores y evitar reinstalar las dependencias cada vez que cambia el código fuente.
+
+Después construí la imagen y ejecuté el contenedor exponiendo el puerto 8000.
+
+**Problemas**
+
+No tuve problemas importantes durante esta parte.
+
+**Verificación**
+
+Comprobé que la aplicación podía ejecutarse dentro del contenedor y que Uvicorn quedaba disponible en el puerto 8000.
+
+**Decisión y aprendizaje**
+
+Decidí mantener el `Dockerfile` porque no solamente permitía ejecutar la aplicación, sino que hacía explícito el entorno necesario para SensorHub. Entendí que Docker no sustituye al código de la aplicación, sino que empaqueta las condiciones necesarias para ejecutarlo de forma reproducible.
+
+---
+
+### Entrada 2 — Martes: Docker Compose, PostgreSQL y configuración por entorno
+
+**Qué necesitaba resolver**
+
+El siguiente problema era más importante: la API ya podía ejecutarse en Docker, pero todavía utilizaba SQLite. La actividad pedía levantar la API junto con PostgreSQL mediante Docker Compose.
+
+Mi duda principal era cómo hacer que el mismo código pudiera seguir funcionando localmente con SQLite y, al mismo tiempo, conectarse a PostgreSQL cuando se ejecutara dentro de Docker.
+
+**Prompt enviado a la IA**
+
+> En mi proyecto SensorHub actualmente utilizo SQLite. La actividad de Semana 4 pide Docker Compose con PostgreSQL. Explícame cómo hacer que la aplicación use SQLite por defecto cuando trabajo localmente, pero PostgreSQL cuando Docker Compose le proporcione DATABASE_URL. Quiero entender por qué se hace mediante variables de entorno.
+
+**Qué propuso la IA**
+
+La IA propuso modificar `app/db.py` para obtener la conexión desde `DATABASE_URL`, utilizando SQLite como valor predeterminado.
+
+También explicó que dentro de Docker Compose no debía utilizar `localhost` para PostgreSQL, porque `localhost` dentro del contenedor de la API se refiere al propio contenedor. En su lugar, Docker Compose permite utilizar el nombre del servicio `db` como hostname.
+
+Por eso la URL utilizada por la API quedó conceptualmente como:
+
+`postgresql+psycopg://sensor:secret@db:5432/sensorhub`
+
+**Qué implementé**
+
+Agregué PostgreSQL como segundo servicio en `docker-compose.yml` y configuré:
+
+* el servicio `api`;
+* el servicio `db`;
+* PostgreSQL 16;
+* las variables `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB`;
+* el volumen `pgdata`;
+* `DATABASE_URL` para que la API pudiera localizar PostgreSQL.
+
+También instalé `psycopg` y agregué sus dependencias al proyecto.
+
+Posteriormente confirmé que `get_database_url()` transformaba correctamente URLs como `postgres://` y `postgresql://` a una URL compatible con `psycopg`.
+
+**Problemas**
+
+Al principio tuve un error de formato en `docker-compose.yml`:
+
+> `services.volumes must be a mapping`
+
+La IA me ayudó a identificar que el problema no era PostgreSQL, sino la indentación y estructura del YAML. Corregí la estructura para que `api` y `db` fueran servicios dentro de `services` y `pgdata` fuera un volumen declarado a nivel raíz.
+
+Después apareció otro problema al levantar Compose: Docker no podía conectarse al daemon porque Docker Desktop no estaba iniciado. Una vez que abrí Docker Desktop, el proceso pudo continuar.
+
+También apareció un problema de sincronización de arranque: la API intentó conectarse a PostgreSQL antes de que PostgreSQL terminara de inicializarse. La primera ejecución de la API terminó con `connection refused`, pero PostgreSQL posteriormente terminó su inicialización correctamente.
+
+Al volver a ejecutar `docker compose up`, la API arrancó correctamente.
+
+**Verificación**
+
+Comprobé:
+
+```text
+docker compose ps
+```
+
+y posteriormente levanté nuevamente los servicios.
+
+La API terminó mostrando:
+
+```text
+Uvicorn running on http://0.0.0.0:8000
+```
+
+También comprobé Swagger y realicé una petición para crear un sensor:
+
+```text
+POST /sensors/
+```
+
+La API respondió `201` y creó correctamente el sensor dentro del entorno Docker.
+
+**Decisión y aprendizaje**
+
+Entendí que `DATABASE_URL` funciona como una especie de selector de entorno: el código de la aplicación no necesita saber si está ejecutándose en mi computadora o dentro de Docker. El entorno proporciona la configuración correspondiente.
+
+También entendí mejor la diferencia entre configuración y código: la dirección de PostgreSQL no debería estar escrita permanentemente dentro de la aplicación.
+
+---
+
+### Entrada 3 — Martes: Alembic y migraciones
+
+**Qué necesitaba resolver**
+
+Después de conseguir que PostgreSQL funcionara con Docker Compose, la actividad pedía inicializar Alembic y generar la primera migración.
+
+Mi intención era que el esquema de la base de datos pudiera reproducirse mediante migraciones en lugar de depender únicamente de `Base.metadata.create_all()`.
+
+**Prompt enviado a la IA**
+
+> En SensorHub ya tengo modelos SQLAlchemy y PostgreSQL funcionando con Docker Compose. Explícame qué problema resuelve Alembic y por qué necesitamos migraciones si SQLAlchemy ya tiene los modelos. Después ayúdame a inicializar Alembic y conectarlo con los modelos actuales.
+
+**Qué propuso la IA**
+
+La IA explicó que SQLAlchemy define cómo debe ser el modelo, pero Alembic permite registrar la evolución del esquema de la base de datos.
+
+Esto es importante porque si posteriormente agrego una columna como `alert_threshold`, no quiero tener que eliminar manualmente toda la base de datos para crearla nuevamente. Una migración permite representar ese cambio de forma controlada.
+
+Inicialicé Alembic mediante:
+
+```text
+alembic init migrations
+```
+
+Esto creó:
+
+* `alembic.ini`;
+* `migrations/env.py`;
+* `migrations/versions/`;
+* otros archivos necesarios para generar migraciones.
+
+**Problema encontrado**
+
+Encontré una diferencia importante entre la configuración de la aplicación y la configuración de Alembic.
+
+Mi aplicación obtenía la URL mediante `get_database_url()`, pero Alembic inicialmente utilizaba la configuración de `alembic.ini`.
+
+Por esa razón, cuando intentaba utilizar la URL de la base de datos, Alembic seguía tomando su configuración predeterminada del `.ini`.
+
+**Pregunta que hice a la IA**
+
+> ¿Por qué Alembic está utilizando la URL del alembic.ini si mi aplicación ya obtiene DATABASE_URL mediante app/db.py? Quiero que las migraciones utilicen la misma configuración de base de datos que utiliza la aplicación.
+
+**Qué hice**
+
+Revisé y modifiqué la configuración de Alembic para que pudiera trabajar con la configuración real del proyecto. También tuve que ajustar la URL del `alembic.ini` para poder generar correctamente las migraciones durante esta etapa.
+
+Después ejecuté la inicialización y generación de la migración.
+
+**Verificación**
+
+La estructura de migraciones quedó creada y pude generar el esquema inicial de los modelos actuales.
+
+Posteriormente ejecuté la actualización de la base de datos mediante Alembic.
+
+**Decisión y aprendizaje**
+
+Esta fue una de las partes donde más aprendí que una herramienta externa no necesariamente utiliza automáticamente la configuración de mi aplicación. Alembic tiene su propio sistema de configuración y tuve que conectarlo explícitamente con la arquitectura existente.
+
+También entendí por qué las migraciones son importantes para producción: una API puede desplegar correctamente y aun así fallar si las tablas que necesita todavía no existen.
+
+---
+
+### Entrada 4 — Miércoles: Pipeline de CI con GitHub Actions
+
+**Qué necesitaba resolver**
+
+Una vez que Docker y PostgreSQL funcionaban, el siguiente objetivo era automatizar las validaciones que anteriormente ejecutaba manualmente.
+
+En semanas anteriores ya utilizaba:
+
+```text
+pytest
+ruff
+mypy
+```
+
+pero necesitaba que estas comprobaciones se ejecutaran automáticamente cuando hiciera un `push`.
+
+**Prompt enviado a la IA**
+
+> Ya tengo SensorHub funcionando y las comprobaciones locales con pytest, Ruff y mypy. Ayúdame a crear un workflow de GitHub Actions que ejecute estas validaciones automáticamente en cada push. Explícame qué significa workflow, job, step y runner porque quiero entender el archivo y no solamente copiarlo.
+
+**Qué propuso la IA**
+
+La IA explicó que GitHub Actions permite crear un pipeline automático.
+
+El workflow define cuándo se ejecuta; el job representa un conjunto de tareas que se ejecutan en un entorno determinado; cada step representa una acción concreta, como instalar Python, instalar dependencias o ejecutar `pytest`.
+
+Implementé el workflow siguiendo la estructura indicada para el proyecto.
+
+**Qué implementé**
+
+Configuré el pipeline para ejecutar las comprobaciones de calidad del proyecto, incluyendo:
+
+* instalación de dependencias;
+* Ruff;
+* Mypy;
+* Pytest.
+
+**Problemas**
+
+No tuve fallas importantes en esta etapa. El workflow se ejecutó correctamente.
+
+**Verificación**
+
+Comprobé que GitHub Actions ejecutara las pruebas y las herramientas de calidad automáticamente y que el pipeline quedara en verde.
+
+**Decisión y aprendizaje**
+
+La principal diferencia respecto a semanas anteriores fue que dejé de depender exclusivamente de ejecutar las herramientas manualmente en mi computadora.
+
+Ahora el repositorio tiene una validación automática que permite detectar problemas antes de integrar cambios.
+
+---
+
+### Entrada 5 — Jueves: Despliegue en Render
+
+**Qué necesitaba resolver**
+
+El objetivo era llevar SensorHub desde Docker y CI hasta un entorno de producción accesible públicamente.
+
+**Prompt enviado a la IA**
+
+> Quiero desplegar SensorHub en Render utilizando PostgreSQL y las variables de entorno que ya configuré para Docker. Explícame qué necesita Render, cómo se relaciona con mi Dockerfile y cómo debo configurar la base de datos sin subir secretos al repositorio.
+
+**Qué propuso la IA**
+
+La IA explicó que Render puede construir y ejecutar la aplicación utilizando la configuración del repositorio y que las variables sensibles deben configurarse en el entorno de Render, no escribirse directamente en el código.
+
+También se explicó la importancia de ejecutar las migraciones antes de que la API comience a recibir tráfico.
+
+**Problemas**
+
+Durante el despliegue tuve varios errores relacionados principalmente con la configuración e indentación de los archivos YAML.
+
+La IA me ayudó a localizar los errores y corregir la estructura hasta conseguir que Render aceptara la configuración.
+
+**Migraciones**
+
+También configuré el proceso de producción para ejecutar:
+
+```text
+alembic upgrade head
+```
+
+antes de iniciar la aplicación.
+
+Esto permite que el esquema de PostgreSQL exista antes de que la API intente utilizar las tablas.
+
+**Verificación**
+
+El despliegue terminó correctamente y la aplicación quedó accesible desde Render.
+
+Comprobé que los endpoints de salud y la documentación de la API estuvieran disponibles públicamente.
+
+**Decisión y aprendizaje**
+
+Aquí entendí una diferencia importante entre desarrollo local y producción: no basta con que el contenedor arranque. También hay que garantizar que la infraestructura necesaria —especialmente la base de datos y su esquema— esté preparada antes de que la aplicación reciba solicitudes.
+
+También entendí que las variables de entorno son fundamentales para evitar colocar credenciales directamente en el repositorio.
+
+---
+
+
+### Entrada 6 — Viernes: Corrección de seguridad en docker-compose.yml
+**Qué necesitaba resolver**
+
+Durante la revisión final de la Evaluación 2, identifiqué que el docker-compose.yml contenía credenciales hardcodeadas:
+
+yaml
+environment:
+  DATABASE_URL: postgresql+psycopg://sensor:secret@db:5432/sensorhub
+  POSTGRES_PASSWORD: secret
+Aunque la guía del curso usaba secret como ejemplo para facilitar el aprendizaje, el criterio de evaluación exige "Cero secretos en el historial; configuración por variables de entorno".
+
+**Prompt enviado a la IA**
+
+En mi docker-compose.yml tengo la contraseña "secret" hardcodeada. La guía del curso la usaba como ejemplo, pero la evaluación pide cero secretos en el historial. ¿Cómo debo modificar el archivo para usar variables de entorno sin romper el funcionamiento local?
+
+**Qué propuso la IA**
+
+>La IA explicó que debía reemplazar los valores fijos por variables de entorno con sintaxis ${VARIABLE:-default}. Esto permite:Usar valores del archivo .env si existeUsar un valor por defecto si no existe (para desarrollo rápido)Mantener el archivo .env fuera del repositorio (excluido por .gitignore)También recomendó crear un .env.example como plantilla para otros desarrolladores.
+
+**Qué implementé**
+
+Modifiqué `docker-compose.yml`:
+
+```yaml
+environment:
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+  POSTGRES_USER: ${POSTGRES_USER:-sensor}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+  POSTGRES_DB: ${POSTGRES_DB:-sensorhub}
+```
+
+Creé `.env` con valores reales (excluido con `.gitignore`):
+
+```bash
+POSTGRES_USER=sensor
+POSTGRES_PASSWORD=mi_contraseña_segura_123
+POSTGRES_DB=sensorhub
+```
+
+Creé `.env.example` como plantilla (sí se sube a Git):
+
+```bash
+POSTGRES_USER=sensor
+POSTGRES_PASSWORD=cambiar_en_produccion
+POSTGRES_DB=sensorhub
+```
+
+Verifiqué que `.env` estuviera en `.gitignore` (línea 158).
+```
+
+
+**Problemas**
+
+Al hacer git push, el remoto rechazó el push porque mi rama local estaba desactualizada. Resolví haciendo git pull primero y luego git push.
+
+Aquí tienes tu texto completo en **Markdown**, todo en un solo bloque para tu reporte:
+
+**Verificación**
+
+Ejecuté:
+
+```powershell
+git ls-files | Select-String ".env"
+```
+
+El resultado mostró solo `migrations/env.py`, confirmando que `.env` no está en el repositorio.
+
+También verifiqué que la API sigue funcionando localmente:
+
+```powershell
+docker-compose up --build
+curl http://localhost:8000/health
+# Respuesta: {"status":"ok"}
+```
+
+## Decisión y aprendizaje
+
+Aunque la guía usaba `secret` como ejemplo didáctico, entendí que en un entregable profesional esa práctica no es aceptable.  
+La separación entre configuración y código no es opcional: es un requisito de seguridad.
+
+El uso de `${VARIABLE:-default}` me permitió mantener la comodidad de desarrollo (no necesito un `.env` para que funcione) mientras cumplo con el criterio de cero secretos en el historial.
+
+También aprendí que Render tiene su propio sistema de variables de entorno, por lo que el `.env` solo aplica a desarrollo local.  
+En producción, Render inyecta `DATABASE_URL` desde el Blueprint.
+
+
+### Entrada 7 — Viernes: Revisión de entregables y retrospectiva
+
+**Qué revisé**
+
+Al finalizar la semana revisé los criterios de entrega:
+
+* `Dockerfile` funcional;
+* imagen basada en una versión `slim`;
+* aprovechamiento de caché mediante el orden de las capas;
+* `docker-compose.yml` para API + PostgreSQL;
+* pipeline de CI funcionando;
+* badge del pipeline en el README;
+* aplicación desplegada en Render;
+* documentación y health accesibles;
+* despliegue continuo;
+* configuración mediante variables de entorno;
+* ausencia de secretos en el historial.
+
+**Uso de IA**
+
+Utilicé la IA principalmente para comprobar decisiones de configuración, interpretar errores y entender por qué las herramientas se comportaban de determinada manera.
+
+No tomé las respuestas como instrucciones automáticas: en varios puntos tuve que modificar lo propuesto después de probarlo en mi propio repositorio.
+
+El mejor ejemplo fue Alembic, donde descubrí que la herramienta estaba utilizando su propia configuración de `alembic.ini` en lugar de la configuración que yo estaba utilizando en `app/db.py`.
+
+**Retrospectiva**
+
+Durante las semanas anteriores mi principal problema fue que, en ocasiones, me concentraba en resolver el problema inmediato sin definir una acción concreta para evitar repetirlo.
+
+Para la siguiente semana voy a cambiar eso.
+
+A partir de ahora, cuando termine una tarea o encuentre un error importante, voy a registrar no solamente qué ocurrió y cómo lo solucioné, sino también **qué voy a cambiar en mi proceso para evitar que vuelva a ocurrir**.
+
+Mi acción concreta para la siguiente semana será:
+
+> **Antes de comenzar una nueva implementación, revisaré la configuración y dependencias que ya existen en el proyecto y escribiré primero qué parte de la arquitectura se va a modificar y por qué. Después de resolver un error, registraré la causa y una acción preventiva concreta.**
+
+De esta manera, la IA no será solamente una herramienta para solucionar errores, sino también una herramienta para analizar mis decisiones y mejorar mi proceso de desarrollo.
