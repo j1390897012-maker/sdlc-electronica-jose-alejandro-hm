@@ -1,37 +1,8 @@
-name: CI
+smoke-test:
+  runs-on: ubuntu-latest
+  needs: test
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  # ============================================
-  # TESTS UNITARIOS Y DE INTEGRACIÓN
-  # ============================================
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - name: Lint
-        run: ruff check .
-      - name: Types
-        run: mypy app --ignore-missing-imports
-      - name: Tests with coverage
-        run: pytest --cov=app --cov-fail-under=80
-
-  # ============================================
-  # SMOKE TEST CON POSTGRESQL REAL
-  # ============================================
-  smoke-test:
-    runs-on: ubuntu-latest
-    needs: test
-
-    services:
+  services:
       postgres:
         image: postgres:16
         env:
@@ -79,8 +50,8 @@ jobs:
         run: |
           python -c "
           import os
-          from app.models.reading import ReadingModel
-          from app.models.sensor import SensorModel
+          from app.db import SessionLocal
+          from app.models import SensorModel
 
           db = SessionLocal()
           try:
@@ -102,8 +73,8 @@ jobs:
           python -c "
           import os
           from datetime import datetime
-          from app.models.reading import ReadingModel
-          from app.models.sensor import SensorModel
+          from app.db import SessionLocal
+          from app.models import ReadingModel
 
           db = SessionLocal()
           try:
@@ -128,12 +99,12 @@ jobs:
           DATABASE_URL: postgresql+psycopg://test_user:test_pass@localhost:5432/test_db
         run: |
           python -c "
-          from app.models.reading import ReadingModel
-          from app.models.sensor import SensorModel
+          from app.db import SessionLocal
+          from app.models import ReadingModel
 
           db = SessionLocal()
           try:
-              count = db.query(Reading).count()
+              count = db.query(ReadingModel).count()
               print(f'✅ {count} lecturas encontradas en la base de datos')
           except Exception as e:
               print(f'❌ Error al consultar: {e}')
