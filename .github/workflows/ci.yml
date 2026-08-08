@@ -40,6 +40,10 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
+      PYTHONPATH: .
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -63,80 +67,7 @@ jobs:
           exit 1
 
       - name: Ejecutar migraciones
-        env:
-          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
         run: alembic upgrade head
 
-      - name: Crear sensor (smoke test)
-        env:
-          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
-        run: |
-          python -c "
-          from app.db import SessionLocal
-          from app.models.sensor import SensorModel
-
-          db = SessionLocal()
-          try:
-              sensor = SensorModel(
-                  name='SMOKE-TEST-01',
-                  sensor_type='temperature',
-                  unit='C'
-              )
-              db.add(sensor)
-              db.commit()
-              print('✅ Sensor creado correctamente')
-          except Exception as e:
-              print(f'❌ Error al crear sensor: {e}')
-              exit(1)
-          finally:
-              db.close()
-          "
-
-      - name: Crear lectura (smoke test)
-        env:
-          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
-        run: |
-          python -c "
-          from datetime import datetime
-          from app.db import SessionLocal
-          from app.models.reading import ReadingModel
-
-          db = SessionLocal()
-          try:
-              reading = ReadingModel(
-                  sensor_id='SMOKE-TEST-01',
-                  value=25.5,
-                  unit='C',
-                  timestamp=datetime.utcnow()
-              )
-              db.add(reading)
-              db.commit()
-              print('✅ Lectura creada correctamente')
-          except Exception as e:
-              print(f'❌ Error al crear lectura: {e}')
-              exit(1)
-          finally:
-              db.close()
-          "
-
-      - name: Consultar lecturas (smoke test)
-        env:
-          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
-        run: |
-          python -c "
-          from app.db import SessionLocal
-          from app.models.reading import ReadingModel
-
-          db = SessionLocal()
-          try:
-              count = db.query(ReadingModel).count()
-              print(f'✅ {count} lecturas encontradas en la base de datos')
-          except Exception as e:
-              print(f'❌ Error al consultar: {e}')
-              exit(1)
-          finally:
-              db.close()
-          "
-
-      - name: Smoke test completado ✅
-        run: echo "¡Todos los tests de humo pasaron correctamente!"
+      - name: Smoke test (crear sensor + lectura + verificar alerta)
+        run: python scripts/smoke_test.py
