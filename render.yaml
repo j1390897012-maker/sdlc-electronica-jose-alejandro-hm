@@ -6,7 +6,9 @@ service:
   healthCheckPath: /health
   envVars:
     - key: DATEBASE_URL
-      fromDatabase: {name: sensorhub-db, property: connectionString}
+      fromDatabase: 
+      name: sensorhub-db
+      property: connectionString
 databases:
     - name: sensorhub-db
       plan: free
