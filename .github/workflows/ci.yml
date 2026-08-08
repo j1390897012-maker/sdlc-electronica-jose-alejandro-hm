@@ -79,12 +79,12 @@ jobs:
         run: |
           python -c "
           import os
-          from app.db import SessionLocal
-          from app.models import Sensor
+          from app.models.reading import ReadingModel
+          from app.models.sensor import SensorModel
 
           db = SessionLocal()
           try:
-              sensor = Sensor(id='SMOKE-TEST-01', location='CI', type='temperature')
+              sensor = SensorModel(id='SMOKE-TEST-01', location='CI', type='temperature')
               db.add(sensor)
               db.commit()
               print('✅ Sensor creado correctamente')
@@ -102,12 +102,12 @@ jobs:
           python -c "
           import os
           from datetime import datetime
-          from app.db import SessionLocal
-          from app.models import Reading
+          from app.models.reading import ReadingModel
+          from app.models.sensor import SensorModel
 
           db = SessionLocal()
           try:
-              reading = Reading(
+              reading = ReadingModel(
                   sensor_id='SMOKE-TEST-01',
                   value=25.5,
                   unit='C',
@@ -128,8 +128,8 @@ jobs:
           DATABASE_URL: postgresql+psycopg://test_user:test_pass@localhost:5432/test_db
         run: |
           python -c "
-          from app.db import SessionLocal
-          from app.models import Reading
+          from app.models.reading import ReadingModel
+          from app.models.sensor import SensorModel
 
           db = SessionLocal()
           try:
