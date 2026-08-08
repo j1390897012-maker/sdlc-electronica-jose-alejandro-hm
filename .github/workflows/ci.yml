@@ -84,10 +84,17 @@ jobs:
 
           db = SessionLocal()
           try:
-              sensor = SensorModel(id='SMOKE-TEST-01', location='CI', type='temperature')
+              sensor = SensorModel(
+                  name='SMOKE-TEST-01',
+                  sensor_type='temperature',
+                  unit='C',
+                  alert_threshold=35.0
+              )
               db.add(sensor)
               db.commit()
               print('✅ Sensor creado correctamente')
+              print(f'   ID: {sensor.id}')
+              print(f'   Name: {sensor.name}')
           except Exception as e:
               print(f'❌ Error al crear sensor: {e}')
               exit(1)
