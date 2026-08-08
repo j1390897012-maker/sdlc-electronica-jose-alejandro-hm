@@ -1,8 +1,31 @@
-smoke-test:
-  runs-on: ubuntu-latest
-  needs: test
+name: CI
 
-  services:
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Lint
+        run: ruff check .
+      - name: Types
+        run: mypy app --ignore-missing-imports
+      - name: Tests with coverage
+        run: pytest --cov=app --cov-fail-under=80
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    needs: test
+
+    services:
       postgres:
         image: postgres:16
         env:
@@ -41,21 +64,24 @@ smoke-test:
 
       - name: Ejecutar migraciones
         env:
-          DATABASE_URL: postgresql+psycopg://test_user:test_pass@localhost:5432/test_db
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
         run: alembic upgrade head
 
       - name: Crear sensor (smoke test)
         env:
-          DATABASE_URL: postgresql+psycopg://test_user:test_pass@localhost:5432/test_db
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
         run: |
           python -c "
-          import os
           from app.db import SessionLocal
-          from app.models import SensorModel
+          from app.models.sensor import SensorModel
 
           db = SessionLocal()
           try:
-              sensor = SensorModel(id='SMOKE-TEST-01', location='CI', type='temperature')
+              sensor = SensorModel(
+                  name='SMOKE-TEST-01',
+                  sensor_type='temperature',
+                  unit='C'
+              )
               db.add(sensor)
               db.commit()
               print('✅ Sensor creado correctamente')
@@ -68,13 +94,12 @@ smoke-test:
 
       - name: Crear lectura (smoke test)
         env:
-          DATABASE_URL: postgresql+psycopg://test_user:test_pass@localhost:5432/test_db
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
         run: |
           python -c "
-          import os
           from datetime import datetime
           from app.db import SessionLocal
-          from app.models import ReadingModel
+          from app.models.reading import ReadingModel
 
           db = SessionLocal()
           try:
@@ -96,11 +121,11 @@ smoke-test:
 
       - name: Consultar lecturas (smoke test)
         env:
-          DATABASE_URL: postgresql+psycopg://test_user:test_pass@localhost:5432/test_db
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
         run: |
           python -c "
           from app.db import SessionLocal
-          from app.models import ReadingModel
+          from app.models.reading import ReadingModel
 
           db = SessionLocal()
           try:

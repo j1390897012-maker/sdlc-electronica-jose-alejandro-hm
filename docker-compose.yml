@@ -10,9 +10,11 @@ services:
 
   db:
     image: postgres:16
+    ports:
+      - "5432:5432"  
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sensor}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}  # ⚠️ Valor por defecto, pero extraído de variable
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
       POSTGRES_DB: ${POSTGRES_DB:-sensorhub}
     volumes:
       - pgdata:/var/lib/postgresql/data
