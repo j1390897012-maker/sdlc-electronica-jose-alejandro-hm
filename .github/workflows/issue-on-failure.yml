@@ -1,0 +1,31 @@
+name: Create Issue on CI Failure
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  issues: write
+
+jobs:
+  create-issue:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          gh issue create \
+            --title "CI falló en main" \
+            --body "El pipeline de CI falló en main.
+
+          Commit: $SHA
+
+          Revisa la ejecución:
+          $RUN_URL"
