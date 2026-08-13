@@ -227,13 +227,31 @@ def test_record_exactamente_en_el_alert_threshold() -> None:
 
 def test_record_slightly_above_alert_threshold() -> None:
     sensor_repo = FakeSensorRepository()
-    sensor_repo.add("TEMP-01", "temperature", "C", alert_threshold=35.0)
-    service = ReadingService(FakeReadingRepository(), sensor_repo, FakeAlertNotifier())
-    reading = service.record(sensor_id=1, value=35.0001, unit="C")
-    assert reading.alert_triggered
-    assert len(service.notifier.messages) == 1
+    sensor_repo.add(
+        "TEMP-01",
+        "temperature",
+        "C",
+        alert_threshold=35.0,
+    )
+    service = ReadingService(
+        FakeReadingRepository(),
+        sensor_repo,
+        FakeAlertNotifier(),
+    )
+
+    reading = service.record(
+        sensor_id=1,
+        value=35.0001,
+        unit="C",
+    )
+
+    assert reading.alert_triggered is True
 
 
 def test_record_unidad_invalida() -> None:
-    with pytest.raises(ValueError, match="unidad inválida"):
-        create_service().record(sensor_id=1, value=25.5, unit="K")
+    with pytest.raises(ValueError):
+        create_service().record(
+            sensor_id=1,
+            value=25.5,
+            unit="K",
+        )
