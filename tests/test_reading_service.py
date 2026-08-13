@@ -204,3 +204,36 @@ def test_record_sin_umbral_configurado_nunca_alerta() -> None:
 
     assert reading.alert_triggered is False
     assert notifier.messages == []
+
+
+def test_record_sensor_inexistente() -> None:
+    with pytest.raises(LookupError, match="Sensor no encontrado"):
+        create_service().record(sensor_id=999, value=25.5, unit="C")
+
+
+def test_record_temperatura_cero_absoluto() -> None:
+    service = create_service()
+    reading = service.record(sensor_id=1, value=-273.15, unit="C")
+    assert reading.value == -273.15
+
+
+def test_record_exactamente_en_el_alert_threshold() -> None:
+    sensor_repo = FakeSensorRepository()
+    sensor_repo.add("TEMP-01", "temperature", "C", alert_threshold=35.0)
+    service = ReadingService(FakeReadingRepository(), sensor_repo)
+    reading = service.record(sensor_id=1, value=35.0, unit="C")
+    assert not reading.alert_triggered
+
+
+def test_record_slightly_above_alert_threshold() -> None:
+    sensor_repo = FakeSensorRepository()
+    sensor_repo.add("TEMP-01", "temperature", "C", alert_threshold=35.0)
+    service = ReadingService(FakeReadingRepository(), sensor_repo, FakeAlertNotifier())
+    reading = service.record(sensor_id=1, value=35.0001, unit="C")
+    assert reading.alert_triggered
+    assert len(service.notifier.messages) == 1
+
+
+def test_record_unidad_invalida() -> None:
+    with pytest.raises(ValueError, match="unidad inválida"):
+        create_service().record(sensor_id=1, value=25.5, unit="K")
