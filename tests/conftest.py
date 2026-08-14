@@ -51,6 +51,17 @@ def setup_test_db() -> Generator[None, None, None]:
 
 
 @pytest.fixture
+def session() -> Generator[Session, None, None]:
+    db = TestingSessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+
+@pytest.fixture
 def client() -> TestClient:
     """Cliente de pruebas de FastAPI, ya conectado a la base de datos de test."""
     return TestClient(app)
