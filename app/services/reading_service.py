@@ -13,6 +13,7 @@ from app.models.sensor import SensorModel
 from app.repositories.reading_repository import ReadingRepository
 from app.repositories.sensor_repository import SensorRepository
 from app.services.alert_notifier import AlertNotifier, ConsoleAlertNotifier
+from app.services.alert_service import AlertService
 
 
 class ReadingService:
@@ -23,10 +24,12 @@ class ReadingService:
         repo: ReadingRepository,
         sensor_repo: SensorRepository,
         notifier: AlertNotifier | None = None,
+        alert_service: AlertService | None = None,
     ) -> None:
         self._repo = repo
         self._sensor_repo = sensor_repo
         self._notifier = notifier or ConsoleAlertNotifier()
+        self._alert_service = alert_service 
 
     def _validate_reading(
         self,
@@ -98,27 +101,37 @@ class ReadingService:
         sensor_id: int,
         value: float,
         unit: str,
-    ) -> ReadingModel:
+) -> ReadingModel:
         """Registra una lectura nueva, validándola primero contra su sensor.
-
-        Si el sensor tiene `alert_threshold` configurado (US-08) y el
-        valor lo supera, notifica la alerta (US-07) y la lectura queda
-        marcada con `alert_triggered=True`.
-        """
+    Si el sensor tiene `alert_threshold` configurado (US-08) y el
+    valor lo supera, notifica la alerta (US-07) y la lectura queda
+    marcada con `alert_triggered=True`.
+    """
         sensor = self._validate_reading(
-            sensor_id,
-            value,
-            unit,
-        )
+        sensor_id,
+        value,
+        unit,
+    )
 
         alert_triggered = self._check_alert(sensor, value)
 
-        return self._repo.add(
-            sensor_id,
-            value,
-            unit,
-            alert_triggered,
+        reading = self._repo.add(
+        sensor_id,
+        value,
+        unit,
+        alert_triggered,
+    )
+
+        if (alert_triggered
+         and self._alert_service is not None
+          and sensor.alert_threshold is not None):
+            self._alert_service.create(
+            sensor_id=sensor.id,
+            reading_id=reading.id,
+            value=value,
+            threshold=sensor.alert_threshold,
         )
+        return reading
 
     def get_reading(
         self,

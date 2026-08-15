@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.repositories.sql_alert_repository import SQLAlertRepository
 from app.repositories.sql_reading_repository import SQLReadingRepository
 from app.repositories.sql_sensor_repository import SQLSensorRepository
 from app.schemas.reading import (
@@ -18,6 +19,7 @@ from app.schemas.reading import (
     SensorReadingOut,
     SensorReadingUpdate,
 )
+from app.services.alert_service import AlertService
 from app.services.reading_service import ReadingService
 
 router = APIRouter(
@@ -31,10 +33,13 @@ def get_reading_service(
     """Inyecta un ReadingService con los repositorios SQL reales (Depends)."""
     reading_repo = SQLReadingRepository(db)
     sensor_repo = SQLSensorRepository(db)
+    alert_repo = SQLAlertRepository(db)
+    alert_service = AlertService(alert_repo)
 
     return ReadingService(
         reading_repo,
         sensor_repo,
+        alert_service=alert_service
     )
 
 

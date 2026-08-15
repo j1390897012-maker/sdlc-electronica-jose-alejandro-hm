@@ -8,7 +8,7 @@ Se ejecuta con: uvicorn app.main:app --reload
 from fastapi import FastAPI
 
 from app.db import Base, engine
-from app.routers import readings, sensors
+from app.routers import alerts, readings, sensors
 
 Base.metadata.create_all(bind=engine)
 
@@ -26,3 +26,4 @@ def health() -> dict[str, str]:
 
 app.include_router(sensors.router)
 app.include_router(readings.router)
+app.include_router(alerts.router)
