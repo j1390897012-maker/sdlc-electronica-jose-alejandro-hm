@@ -755,3 +755,390 @@ Mi acción concreta para la siguiente semana será:
 > **Antes de comenzar una nueva implementación, revisaré la configuración y dependencias que ya existen en el proyecto y escribiré primero qué parte de la arquitectura se va a modificar y por qué. Después de resolver un error, registraré la causa y una acción preventiva concreta.**
 
 De esta manera, la IA no será solamente una herramienta para solucionar errores, sino también una herramienta para analizar mis decisiones y mejorar mi proceso de desarrollo.
+
+
+
+# BITÁCORA DE IA — SEMANA 5
+
+## Prompting efectivo, trazabilidad, documentación asistida y ejercicio integrador
+
+### Entrada 1 — Lunes: Prompting efectivo
+
+**Qué necesitaba resolver**
+
+El objetivo del primer día era aprender a utilizar la IA de manera más efectiva mediante prompts estructurados. La actividad estaba relacionada con **GitHub Copilot Fundamentals** y buscaba entender cómo la calidad del contexto proporcionado influye directamente en la respuesta generada.
+
+**Prompt enviado a la IA**
+
+> Ayúdame a crear un ejemplo de prompting efectivo para una tarea de desarrollo en mi proyecto SensorHub. Quiero comparar un prompt malo con uno bueno y explicar qué elementos hacen que el segundo sea más preciso. Usa la estructura contexto, tarea, restricciones y resultado esperado.
+
+**Qué propuso la IA**
+
+La IA mostró que un prompt demasiado general deja demasiadas decisiones abiertas al modelo. En cambio, un prompt con contexto, tarea concreta, restricciones y resultado esperado reduce la ambigüedad.
+
+También explicó que proporcionar información relevante del proyecto permite que la respuesta sea más específica y evita que la IA tenga que asumir detalles.
+
+**Qué implementé**
+
+Realicé el ejercicio solicitado por la actividad de **GitHub Copilot Fundamentals**, generando ejemplos de un prompt deficiente y uno estructurado.
+
+La comparación permitió identificar elementos que posteriormente utilicé durante las demás actividades de la semana.
+
+**Problemas**
+
+No tuve problemas técnicos importantes durante esta actividad.
+
+**Verificación**
+
+Comprobé que un prompt con contexto y restricciones producía respuestas más cercanas a lo que realmente necesitaba implementar.
+
+**Decisión y aprendizaje**
+
+Entendí que “preguntarle algo a la IA” y darle instrucciones de ingeniería no son exactamente lo mismo. Un prompt efectivo debe reducir las decisiones que el modelo tiene que inventar por su cuenta.
+
+---
+
+### Entrada 2 — Martes: IA local y trazabilidad
+
+**Qué necesitaba resolver**
+
+La actividad del martes buscaba trabajar con IA manteniendo trazabilidad sobre las decisiones y resultados generados.
+
+Como no contaba con una API de ChatGPT Cloud disponible para integrar al ejercicio, utilicé el modelo local que ya estaba ejecutando en mi entorno: **Qwen 2.5 7B**.
+
+**Prompt enviado a la IA**
+
+> Analiza esta tarea de mi proyecto SensorHub utilizando únicamente el contexto y archivos que te proporcione. Antes de proponer cambios, identifica qué parte de la arquitectura está involucrada, qué archivos tendrían que modificarse y qué información falta. No inventes nombres de variables, endpoints ni estructuras que no existan en el proyecto.
+
+**Qué propuso la IA**
+
+La IA local podía analizar el proyecto y proponer cambios con bastante rapidez. Una de sus principales ventajas fue que podía trabajar con mayor contexto del proyecto y responder sin depender de una suscripción o de una API externa.
+
+Sin embargo, también observé una limitación importante: aunque se especificaran restricciones explícitas, el modelo podía realizar cambios adicionales que no habían sido solicitados.
+
+**Problemas**
+
+En algunas ocasiones Qwen realizó modificaciones de más. Incluso después de proporcionarle contexto suficiente, llegó a asumir nombres o estructuras que no existían realmente en el proyecto.
+
+Esto produjo errores cuando posteriormente ejecuté las pruebas.
+
+**Qué cambié**
+
+No acepté automáticamente las modificaciones propuestas por la IA. Revisé los cambios, los ejecuté y corregí aquello que el modelo había supuesto incorrectamente.
+
+Esto reforzó la necesidad de mantener trazabilidad entre:
+
+* lo que se pidió;
+* lo que la IA propuso;
+* lo que realmente existía en el proyecto;
+* y lo que finalmente se decidió implementar.
+
+**Verificación**
+
+Probé los cambios en el repositorio y utilicé las herramientas de validación del proyecto para detectar las suposiciones incorrectas.
+
+**Decisión y aprendizaje**
+
+La experiencia mostró una diferencia importante entre velocidad y precisión. Qwen era considerablemente más rápido para trabajar con mi proyecto y no requería una suscripción, pero necesitaba una supervisión más estricta.
+
+Aprendí que proporcionar contexto no significa que el modelo necesariamente lo respete por completo. La salida de la IA sigue teniendo que ser revisada y validada contra el código real.
+
+---
+
+### Entrada 3 — Miércoles: Generación de pruebas asistida por IA
+
+**Qué necesitaba resolver**
+
+El objetivo del miércoles era utilizar IA para ampliar las pruebas del proyecto. La actividad pedía agregar cinco pruebas nuevas al pipeline.
+
+La intención era utilizar la IA para acelerar la generación de casos, pero manteniendo las pruebas alineadas con las estructuras reales del proyecto.
+
+**Prompt enviado a la IA**
+
+> Revisa la estructura actual de SensorHub y genera cinco pruebas adicionales relacionadas con la funcionalidad indicada por la actividad. Utiliza únicamente fixtures, modelos, repositorios y endpoints que realmente existan en el proyecto. No inventes variables, sensores ni estructuras de datos. Explica qué comportamiento verifica cada prueba antes de proponer el código.
+
+**Qué propuso la IA**
+
+La IA generó las cinco pruebas solicitadas y explicó brevemente qué comportamiento pretendía comprobar cada una.
+
+Sin embargo, algunas de las pruebas utilizaron variables y datos que el modelo había inventado en lugar de reutilizar correctamente las estructuras existentes.
+
+**Problema encontrado**
+
+Al ejecutar:
+
+```text
+pytest
+```
+
+las pruebas generadas produjeron errores porque algunos nombres y variables utilizados por la IA no existían realmente en el proyecto.
+
+Aunque había proporcionado contexto para evitar ese problema, el modelo todavía realizó inferencias incorrectas.
+
+**Qué cambié**
+
+Revisé las pruebas generadas y sustituí las referencias inventadas por las fixtures y estructuras reales del proyecto.
+
+No acepté las cinco pruebas simplemente porque el modelo las hubiera generado. Las validé ejecutándolas contra el repositorio real y corregí aquellas partes que no correspondían con la arquitectura existente.
+
+**Verificación**
+
+Después de corregir las pruebas, ejecuté nuevamente:
+
+```text
+pytest -q
+```
+
+y comprobé que el conjunto de pruebas volviera a funcionar correctamente.
+
+**Decisión y aprendizaje**
+
+Esta actividad reforzó una idea que ya había aparecido el martes: la IA puede generar código válido sintácticamente pero incorrecto respecto al contexto real del proyecto.
+
+Por eso decidí mantener el proceso de:
+
+> **Generar → revisar → ejecutar → corregir.**
+
+La IA puede acelerar la escritura de pruebas, pero la ejecución del pipeline sigue siendo necesaria para comprobar que realmente corresponden al proyecto.
+
+---
+
+### Entrada 4 — Jueves: Documentación asistida y primer ADR
+
+**Qué necesitaba resolver**
+
+El jueves estuvo dedicado a utilizar IA para apoyar la documentación de decisiones arquitectónicas mediante un **ADR (Architecture Decision Record)**.
+
+La intención no era dejar que la IA decidiera por mí, sino utilizarla para transformar una decisión técnica que ya había tomado en una documentación clara y estructurada.
+
+**Prompt enviado a la IA**
+
+> Ayúdame a redactar mi primer ADR para SensorHub. Usa el contexto de la arquitectura actual y explica el problema, las alternativas consideradas, la decisión tomada y las consecuencias. No inventes decisiones que no haya tomado ni agregues componentes que no existan en el proyecto.
+
+**Qué propuso la IA**
+
+La IA generó una estructura de ADR clara, incluyendo:
+
+* contexto;
+* problema;
+* alternativas;
+* decisión;
+* consecuencias.
+
+En este caso, la propuesta fue bastante cercana a lo que necesitaba documentar.
+
+**Qué implementé**
+
+Utilicé la propuesta como base para mi primer ADR y realicé cambios menores para adaptarla exactamente a la situación del proyecto.
+
+A diferencia de otros ejercicios de la semana, aquí tuve que modificar relativamente poco la salida generada.
+
+**Verificación**
+
+Leí el documento completo y comprobé que la decisión registrada correspondiera con la arquitectura real de SensorHub.
+
+**Decisión y aprendizaje**
+
+Aprendí que la IA puede ser especialmente útil para documentación cuando la decisión técnica ya está clara y lo que necesito es estructurarla y expresarla correctamente.
+
+La responsabilidad de decidir sigue siendo mía; la IA funciona como apoyo para comunicar y registrar la decisión.
+
+---
+
+### Entrada 5 — Viernes: Ejercicio integrador — detección y registro de alertas
+
+**Qué necesitaba resolver**
+
+El ejercicio integrador consistió en completar la funcionalidad relacionada con la detección y consulta de alertas generadas al recibir lecturas de sensores.
+
+La aplicación ya contaba desde semanas anteriores con la lógica para evaluar un valor contra el `alert_threshold` configurado en cada sensor y marcar la lectura mediante:
+
+```text
+alert_triggered=True
+```
+
+El objetivo de esta etapa era comprobar que las alertas pudieran persistirse y posteriormente consultarse mediante la API.
+
+**Prompt enviado a la IA**
+
+> En SensorHub las lecturas ya tienen el campo alert_triggered y ReadingService ya detecta cuando un valor supera el alert_threshold del sensor. Necesito implementar la persistencia y consulta de las alertas. Quiero que Alert tenga su propio modelo, repositorio, servicio y endpoint GET /alerts. No quiero que el endpoint dependa de las lecturas nuevas; debe poder consultar las alertas existentes en la base de datos.
+
+**Qué propuso la IA**
+
+La IA propuso crear:
+
+* `AlertModel`;
+* `AlertRepository`;
+* `SQLAlertRepository`;
+* `AlertService`;
+* `AlertOut`;
+* `GET /alerts`.
+
+También propuso conectar `ReadingService` con `AlertService` para registrar una alerta cuando una lectura superara el umbral.
+
+**Qué implementé**
+
+Se implementó la cadena completa:
+
+```text
+ReadingService
+      ↓
+AlertService
+      ↓
+SQLAlertRepository
+      ↓
+AlertModel
+      ↓
+alerts
+```
+
+Cuando una lectura supera el umbral configurado, `ReadingService` crea una alerta persistente asociada al sensor y a la lectura.
+
+Además, se agregó:
+
+```text
+GET /alerts
+```
+
+para consultar las alertas almacenadas.
+
+**Problema encontrado**
+
+Inicialmente apareció un problema importante: las lecturas anteriores tenían:
+
+```text
+alert_triggered=True
+```
+
+pero no existían registros correspondientes en la tabla `alerts`.
+
+Por ejemplo, la consulta de lecturas mostraba:
+
+```text
+--- READINGS CON ALERTA ---
+(1, 1, 40.0, 'C', 1)
+(2, 1, 40.0, 'C', 1)
+(3, 2, 40.0, 'C', 1)
+(4, 2, 50.0, 'C', 1)
+```
+
+mientras que la tabla de alertas solamente contenía:
+
+```text
+--- ALERTS ---
+(1, 2, 4, 50.0, 35.0)
+```
+
+Por lo tanto, `GET /alerts` solamente podía devolver la alerta que realmente estaba almacenada.
+
+**Decisión tomada**
+
+La primera propuesta de la IA fue tratar las alertas como eventos nuevos generados durante la creación de lecturas. No acepté esa solución como explicación del comportamiento esperado de `GET /alerts`.
+
+Mi decisión fue que el endpoint de listado debía representar **el estado completo de las alertas**, no solamente las alertas generadas desde que se conectó el nuevo servicio.
+
+Por eso planteé una solución más sencilla: el modelo/repositorio de alertas debe consultar las alertas existentes y, cuando sea necesario reconstruirlas, utilizar las lecturas que ya tienen `alert_triggered=True`.
+
+La razón principal fue conservar el contexto histórico. Si anteriormente existieran mil lecturas marcadas como alerta, no tendría sentido obligar al sistema a conocer solamente las alertas creadas después de la implementación del servicio.
+
+**Verificación**
+
+Después de corregir la integración ejecuté:
+
+```text
+pytest -q
+mypy app
+ruff check .
+```
+
+y obtuve:
+
+```text
+87 passed, 1 warning
+```
+
+con una cobertura total de:
+
+```text
+92.71%
+```
+
+Mypy terminó con:
+
+```text
+Success: no issues found in 31 source files
+```
+
+y Ruff:
+
+```text
+All checks passed!
+```
+
+También comprobé el endpoint `GET /alerts` desde Swagger y confirmé que las alertas almacenadas podían consultarse correctamente.
+
+**Decisión y aprendizaje**
+
+Esta fue la actividad donde más claramente apliqué el principio de que **la IA propone, pero yo decido**.
+
+La IA inicialmente podía llevarme hacia una solución que funcionara para las alertas nuevas, pero cuestioné el comportamiento porque no representaba correctamente el significado de un endpoint llamado `GET /alerts`.
+
+No acepté la primera solución solamente porque funcionara técnicamente. Revisé el modelo de datos, comprobé qué información histórica existía y elegí una solución que mantuviera el contexto de las alertas anteriores.
+
+También confirmé que las pruebas, Mypy y Ruff son fundamentales para validar que las modificaciones propuestas por IA realmente se integren con el proyecto existente.
+
+---
+
+### Entrada 6 — Viernes: Validación final y retrospectiva
+
+**Qué revisé**
+
+Al finalizar la semana revisé que las actividades relacionadas con IA hubieran quedado integradas al proceso de desarrollo:
+
+* prompting estructurado;
+* GitHub Copilot Fundamentals;
+* uso de IA local con Qwen 2.5 7B;
+* trazabilidad de prompts y decisiones;
+* generación asistida de pruebas;
+* documentación asistida mediante ADR;
+* implementación y persistencia de alertas;
+* endpoint `GET /alerts`;
+* validación mediante Pytest;
+* validación mediante Mypy;
+* validación mediante Ruff.
+
+**Uso de IA**
+
+Durante la semana utilicé la IA principalmente para:
+
+* entender conceptos;
+* analizar errores;
+* proponer estructuras;
+* generar pruebas;
+* redactar documentación;
+* revisar decisiones de arquitectura;
+* proponer implementaciones.
+
+Sin embargo, no acepté automáticamente sus respuestas.
+
+El caso de las alertas fue especialmente importante porque tuve que cuestionar una propuesta de implementación. La IA estaba enfocándose en registrar las alertas generadas a partir de las nuevas lecturas, mientras que yo necesitaba que el sistema conservara y pudiera consultar el contexto histórico.
+
+**Retrospectiva**
+
+Esta semana confirmé que el principal riesgo de trabajar con IA no es únicamente que genere código con errores de sintaxis. Un problema más importante es que puede generar una solución **coherente pero incorrecta respecto al contexto del proyecto**.
+
+Esto ocurrió con Qwen cuando inventó variables para las pruebas y también apareció durante la implementación de las alertas.
+
+Por eso, mi proceso debe seguir siendo:
+
+> **Entender el problema → pedir una propuesta → revisar la propuesta → implementarla → ejecutar las pruebas → cuestionar los resultados → corregir si es necesario.**
+
+La IA me permitió avanzar más rápido, especialmente con documentación, pruebas y exploración de soluciones, pero las decisiones finales continuaron dependiendo de la revisión humana y de la evidencia obtenida al ejecutar el proyecto.
+
+**Acción preventiva**
+
+Para las siguientes semanas voy a mantener una regla más estricta:
+
+> **No consideraré correcta una propuesta de IA hasta comprobar que coincide con el código, los datos y el comportamiento esperado del proyecto. Si la propuesta contradice el contexto existente, la cuestionaré antes de implementarla, aunque técnicamente parezca funcionar.**
+
+Esto convierte la IA en una herramienta de apoyo al desarrollo y no en una fuente automática de decisiones arquitectónicas.
