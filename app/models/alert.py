@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -28,6 +28,11 @@ class AlertModel(Base):
     value: Mapped[float]
 
     threshold: Mapped[float]
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="open",
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         default=lambda: datetime.now(UTC),

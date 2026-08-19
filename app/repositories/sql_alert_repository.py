@@ -72,3 +72,19 @@ class SQLAlertRepository:
     ]
 
         return alerts + historical_alerts
+
+    def update_status(
+        self,
+        alert_id: int,
+        status: str,
+    ) -> AlertModel | None:
+        alert = self._session.get(AlertModel, alert_id)
+
+        if alert is None:
+            return None
+
+        alert.status = status
+        self._session.commit()
+        self._session.refresh(alert)
+
+        return alert

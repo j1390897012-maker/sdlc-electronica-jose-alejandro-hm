@@ -28,3 +28,15 @@ class FakeAlertRepository:
 
     def list(self) -> list[AlertModel]:
         return list(self.alerts)
+
+    def update_status(
+        self,
+        alert_id: int,
+        status: str,
+    ) -> AlertModel | None:
+        for alert in self.alerts:
+            if alert.id == alert_id:
+                alert.status = status
+                return alert
+
+        return None

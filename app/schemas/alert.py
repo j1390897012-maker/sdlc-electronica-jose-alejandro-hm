@@ -1,4 +1,4 @@
-""" Esquemas de alertas para la API. """
+"""Esquemas de alertas para la API."""
 
 from datetime import datetime
 
@@ -6,12 +6,19 @@ from pydantic import BaseModel, ConfigDict
 
 
 class AlertOut(BaseModel):
-    """ Representación de una alerta para la API. """
+    """Representación de una alerta para la API."""
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     sensor_id: int
     reading_id: int
-    value: float   
+    value: float
     threshold: float
     created_at: datetime
+    status: str
+
+
+class AlertStatusUpdate(BaseModel):
+    """Datos para actualizar el estado de una alerta."""
+
+    status: str
