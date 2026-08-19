@@ -1,20 +1,21 @@
 """esquema inicial: sensors y readings
 
-Revision ID: 5d6dcde3597d
+Revision ID: 0bcd9d8609f4
 Revises: 
-Create Date: 2026-08-08 16:55:08.786116
+Create Date: 2026-08-19 16:26:27.263417
 
 """
-from collections.abc import Sequence
+from typing import Sequence, Union
 
-import sqlalchemy as sa
 from alembic import op
+import sqlalchemy as sa
+
 
 # revision identifiers, used by Alembic.
-revision: str = '5d6dcde3597d'
-down_revision: str | Sequence[str] | None = "0436696aa27b"
-branch_labels: str | Sequence[str] | None = None
-depends_on: str | Sequence[str] | None = None
+revision: str = '0bcd9d8609f4'
+down_revision: Union[str, Sequence[str], None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
@@ -39,8 +40,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['sensor_id'], ['sensors.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_readings_sensor_id'),
-     'readings', ['sensor_id'], unique=False)
+    op.create_index(op.f('ix_readings_sensor_id'), 'readings', ['sensor_id'], unique=False)
     # ### end Alembic commands ###
 
 
