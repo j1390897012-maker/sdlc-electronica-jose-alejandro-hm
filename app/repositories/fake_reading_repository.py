@@ -65,6 +65,39 @@ class FakeReadingRepository:
 
         return readings[offset : offset + limit]
 
+
+    def list_stats_for_sensor(
+        self,
+        sensor_id: int,
+        date_from: datetime | None = None, 
+        date_to: datetime | None = None,
+    ) -> list[ReadingModel]:
+        """Calcula estadísticas (min, max, avg) de las lecturas de un sensor."""   
+        
+        readings = [
+            reading
+            for reading in self.readings
+            if reading.sensor_id == sensor_id
+        ]
+
+        if date_from is not None:
+            readings = [
+                reading for reading in 
+                readings if reading.created_at  >= date_from
+                ]
+
+
+        if date_to is not None:
+            readings = [
+                reading for reading in 
+                readings if reading.created_at <= date_to
+                ]   
+        return readings
+
+
+
+
+
     def update(
         self,
         reading_id: int,

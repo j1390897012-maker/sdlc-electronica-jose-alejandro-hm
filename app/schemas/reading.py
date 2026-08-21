@@ -53,3 +53,12 @@ class SensorReadingOut(SensorReadingIn):
     alert_triggered: bool = False
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SensorReadingStats(BaseModel):
+    """Estadísticas de lecturas de un sensor."""
+
+    sensor_id: int
+    minimum: float
+    maximum: float
+    average: float

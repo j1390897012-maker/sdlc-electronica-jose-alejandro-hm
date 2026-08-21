@@ -43,6 +43,33 @@ def get_reading_service(
     )
 
 
+
+@router.get(
+    "/sensors/{sensor_id}/readings/stats",
+)
+def get_reading_stats(
+    sensor_id: int,
+    date_from: datetime | None = Query(default=None, alias="from"),
+    date_to: datetime | None = Query(default=None, alias="to"),
+    service: ReadingService = Depends(get_reading_service),
+) -> dict[str, float]:
+    """GET /sensors/{id}/readings/stats — estadísticas por periodo."""
+
+    try:
+        return service.get_stats_for_sensor(
+            sensor_id,
+            date_from,
+            date_to,
+        )
+
+    except LookupError as error:
+        raise HTTPException(
+            status_code=404,
+            detail=str(error),
+        ) from error
+
+
+
 @router.get(
     "/readings/{reading_id}",
     response_model=SensorReadingOut,

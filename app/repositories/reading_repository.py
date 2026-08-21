@@ -37,7 +37,17 @@ class ReadingRepository(Protocol):
     date_to: datetime | None = None,
 ) -> list[ReadingModel]:
         """Lista las lecturas de un sensor, con paginación y filtro de fecha."""
+    ...
+
+    def list_stats_for_sensor(
+        self,
+        sensor_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> list[ReadingModel]:
+        """Calcula estadísticas (min, max, avg) de las lecturas de un sensor."""
         ...
+
 
     def update(
         self,
