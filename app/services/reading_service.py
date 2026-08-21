@@ -157,6 +157,39 @@ class ReadingService:
             date_to,
         )
 
+
+
+    def get_stats_for_sensor(
+        self,
+        sensor_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> dict[str, float]:
+        """Calcula estadísticas (min, max, avg) de las lecturas de un sensor."""
+        
+        
+        readings = self._repo.list_stats_for_sensor(
+            sensor_id,
+            date_from,
+            date_to,
+        )
+
+        if not readings:
+            raise LookupError(
+                "No hay lecturas para estesensor en el rango de fechas dado")
+
+        values = [reading.value for reading in readings]
+
+        return {
+        "min": min(values),
+        "max": max(values),
+        "avg": sum(values) / len(values),
+        }
+
+
+
+
+
     def update(
         self,
         reading_id: int,

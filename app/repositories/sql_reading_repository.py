@@ -70,6 +70,38 @@ class SQLReadingRepository:
             self._session.scalars(statement).all()
         )
 
+
+
+    def list_stats_for_sensor(
+        self,
+        sensor_id: int,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+    ) -> list[ReadingModel]:
+        """Calcula estadísticas (min, max, avg) de las lecturas de un sensor."""
+
+        statement = (
+            select(ReadingModel)
+            .where(ReadingModel.sensor_id == sensor_id)
+        )
+
+        if date_from is not None:
+            statement = statement.where(
+                ReadingModel.created_at >= date_from
+            )
+
+        if date_to is not None:
+            statement = statement.where(
+                ReadingModel.created_at <= date_to
+            )
+        return list(
+            self._session.scalars(statement).all()
+        )
+
+
+
+
+
     def update(
         self,
         reading_id: int,

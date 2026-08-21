@@ -295,3 +295,51 @@ def test_record_crea_alerta_si_supera_umbral() -> None:
     assert alerts[0].reading_id == reading.id
     assert alerts[0].value == 40.0
     assert alerts[0].threshold == 35.0
+
+
+
+def test_get_stats_for_sensor() -> None:
+    reading_repo = FakeReadingRepository()
+    sensor_repo = FakeSensorRepository()
+
+    sensor_repo.add(
+        "TEMP-01",
+        "temperature",
+        "C",
+    )
+
+    service = ReadingService(
+        reading_repo,
+        sensor_repo,
+    )
+
+    service.record(1, 20, "C")
+    service.record(1, 30, "C")
+    service.record(1, 40, "C")
+
+    stats = service.get_stats_for_sensor(1)
+
+    assert stats["min"] == 20
+    assert stats["max"] == 40
+    assert stats["avg"] == 30
+
+def test_get_stats_for_sensor_sin_lecturas() -> None:
+    reading_repo = FakeReadingRepository()
+    sensor_repo = FakeSensorRepository()
+
+    sensor_repo.add(
+        "TEMP-01",
+        "temperature",
+        "C",
+    )
+
+    service = ReadingService(
+        reading_repo,
+        sensor_repo,
+    )
+
+    with pytest.raises(
+        LookupError,
+        match="No hay lecturas",
+    ):
+        service.get_stats_for_sensor(1)

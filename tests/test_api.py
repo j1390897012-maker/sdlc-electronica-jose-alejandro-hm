@@ -571,3 +571,42 @@ def test_patch_sensor_actualiza_umbral() -> None:
 
     assert response.status_code == 200
     assert response.json()["alert_threshold"] == 50.0
+
+def test_get_reading_stats() -> None:
+    unique_name = f"TEMP-STATS-{uuid.uuid4().hex[:6]}"
+
+    sensor_response = client.post(
+        "/sensors/",
+        json={
+            "name": unique_name,
+            "sensor_type": "temperature",
+            "unit": "C",
+        },
+    )
+
+    assert sensor_response.status_code == 201
+
+    sensor_id = sensor_response.json()["id"]
+
+    for value in (20, 30, 40):
+        response = client.post(
+            f"/sensors/{sensor_id}/readings",
+            json={
+                "value": value,
+                "unit": "C",
+            },
+        )
+
+        assert response.status_code == 201
+
+    response = client.get(
+        f"/sensors/{sensor_id}/readings/stats",
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["min"] == 20
+    assert data["max"] == 40
+    assert data["avg"] == 30
