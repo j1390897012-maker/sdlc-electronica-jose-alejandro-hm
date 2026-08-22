@@ -6,7 +6,10 @@ implementación concreta, así que se puede sustituir en tests sin
 tocar consola ni archivos (DIP).
 """
 
+import logging
 from typing import Protocol
+
+logger = logging.getLogger(__name__)
 
 
 class AlertNotifier(Protocol):
@@ -18,11 +21,11 @@ class AlertNotifier(Protocol):
 
 
 class ConsoleAlertNotifier:
-    """Implementación por defecto: imprime la alerta en consola."""
+    """Implementación por defecto: registra la alerta vía logging."""
 
     def notify(self, message: str) -> None:
-        """Imprime la alerta con el prefijo [ALERTA]."""
-        print(f"[ALERTA] {message}")
+        """Registra la alerta como log estructurado (nivel WARNING)."""
+        logger.warning("alerta_generada", extra={"alert_message": message})
 
 
 class FakeAlertNotifier:
