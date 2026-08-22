@@ -5,10 +5,16 @@ y asegura que las tablas existan en la base de datos al arrancar.
 Se ejecuta con: uvicorn app.main:app --reload
 """
 
+import logging
+
 from fastapi import FastAPI
 
 from app.db import Base, engine
+from app.logging_config import configure_logging
 from app.routers import alerts, metrics, readings, sensors
+
+configure_logging()
+logger = logging.getLogger(__name__)
 
 Base.metadata.create_all(bind=engine)
 
@@ -16,6 +22,12 @@ app = FastAPI(
     title="SensorHub API",
     version="0.1.0",
 )
+
+
+@app.on_event("startup")
+def log_startup() -> None:
+    """Registra el arranque de la aplicación (RNF-5: logs estructurados)."""
+    logger.info("sensorhub_api_startup")
 
 
 @app.get("/health")
