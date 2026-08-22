@@ -1,3 +1,318 @@
+# Bitácora de IA
+
+## Introducción
+
+Esta bitácora documenta el uso de herramientas de inteligencia artificial
+durante el desarrollo de SensorHub API.
+
+La documentación evolucionó conforme avanzó el proyecto. Las primeras
+entradas registran principalmente el proceso de comprensión de conceptos
+y las dificultades encontradas durante el aprendizaje. Posteriormente se
+adoptó una estructura más sistemática para registrar las consultas,
+sugerencias, decisiones y cambios realizados.
+
+
+ AI_LOG
+
+Entrada 1 - Entendiendo DIP y cómo se conectan las clases
+
+Prompt realizado
+
+"Explícame el DIP porque no entiendo cómo se conectan las clases. No entiendo de dónde sale el objeto que recibe la clase ni cómo funciona cuando una clase recibe otra como parámetro y agrega un ejemplo explicando cada parte."
+
+### Qué me explicó la IA
+
+La IA explicó que en el principio de inversión de dependencias una clase no debería crear directamente los objetos que necesita dentro de ella.
+
+Me mostró un ejemplo donde una clase recibe una dependencia desde afuera:
+
+```python
+class Monitoreo:
+    def __init__(self, almacenamiento):
+        self.almacenamiento = almacenamiento
+````
+
+Al principio no entendía de dónde salía `almacenamiento`, porque pensaba que al ponerlo como parámetro lo estaba creando ahí mismo.
+
+Después entendí que el objeto se crea antes y solamente se entrega a la clase.
+
+Ejemplo:
+
+```python
+nube = Nube()
+
+monitor = Monitoreo(nube)
+```
+
+La clase `Monitoreo` no sabe si recibió una nube, una memoria local u otra forma de almacenamiento. Solo sabe que tiene un objeto que puede guardar datos.
+
+### Mi decisión
+
+En el driver UART seguí la misma idea haciendo que `UartDevice` recibiera el parser desde afuera:
+
+```python
+device = UartDevice(config, parser)
+```
+
+en lugar de crear dentro de la clase un parser específico que fue un error que me costo comprender.
+
+### ¿Por qué tomé esa decisión?
+
+Porque entendí que si después quiero cambiar de `ModbusParser` a `NMEAParser`, no tendría que modificar `UartDevice`.
+La clase principal queda más flexible y cada objeto tiene una responsabilidad más clara.
+
+## Entrada 2 - Entendiendo dataclass, self y __post_init__
+
+### Prompt realizado
+
+"Explícame qué hace self y __post_init__, porque no entiendo cómo se conecta la validación con el objeto que estoy creando."
+
+### Qué me explicó la IA
+
+La IA explicó que `self` representa al objeto específico que se está utilizando.
+Al principio entendía que `self` era solamente algo que se escribe siempre en Python, pero no comprendía qué estaba apuntando realmente.
+
+Con el ejemplo:
+
+```python
+self.baud_rate
+````
+
+entendí que significa:
+
+"el baud_rate de este objeto específico".
+
+También explicó que `__post_init__` es una función especial de los `dataclass` que se ejecuta después de crear el objeto.
+Como `dataclass` genera automáticamente el constructor, esta función permite agregar reglas adicionales después de recibir los valores.
+
+Ejemplo:
+
+```python
+if self.baud_rate not in BAUDRATES_VALIDOS:
+    raise ValueError(...)
+```
+
+### Mi decisión
+
+Usé `__post_init__` para validar la configuración UART.
+
+### ¿Por qué?
+
+Porque una configuración UART incorrecta no debería existir dentro del programa.
+Es mejor detener el error al crear el objeto que descubrirlo después cuando se intente comunicar con el dispositivo.
+
+## Entrada 3 - Diseño del parser y uso de herencia
+
+### Prompt realizado
+
+"Explícame cómo diseñar los parsers. No entiendo por qué crear una clase base si cada protocolo tiene diferente formato."
+
+### Qué me explicó la IA
+
+La IA explicó que la clase base no tiene que contener toda la lógica, sino definir una estructura común.
+
+Todos los parsers tienen algo en común:
+
+reciben datos y los convierten a información útil.
+
+Por eso se puede definir una clase general:
+
+```python
+class MessageParser:
+    def parse(self, message):
+        pass
+````
+
+Después cada protocolo implementa su propia forma:
+
+```python
+class ModbusParser(MessageParser):
+```
+
+```python
+class NMEAParser(MessageParser):
+```
+
+### Mi decisión
+
+Separé los parsers por protocolo en lugar de hacer una sola clase con muchos if (solo se programas asi).
+
+### ¿Por qué?
+
+Porque cada protocolo puede cambiar independientemente.
+Si mañana agrego otro protocolo, puedo crear otro parser sin modificar los existentes.
+Esto aplica el principio abierto/cerrado (OCP).
+Sí, tienes razón otra vez. El anterior todavía parece escrito como documentación corporativa. Tu proceso fue más humano: había confusión, intentos fallidos, correcciones y momentos donde algo hizo clic.
+
+
+# Bitácora de IA – Semana 2
+## Evaluación 1: Sprint 0, del caos al proceso
+
+---
+
+# Entrada 1 – Construcción del Product Backlog
+
+## Uso de IA:
+Se utilizó IA como apoyo para estructurar los requisitos del sistema de monitoreo ambiental y convertir ideas generales del proyecto en historias de usuario con formato ágil.
+
+## Preguntas realizadas:
+Se consultó sobre cómo escribir correctamente una User Story, qué información debía incluir y cómo convertir una necesidad del usuario en una historia verificable.
+
+También se preguntó cómo aplicar criterios de aceptación utilizando Gherkin y cómo dividir funcionalidades grandes en historias más pequeñas.
+
+## Sugerencia recibida:
+Utilizar la estructura:
+
+"Como [rol], quiero [acción], para [beneficio]"
+
+Además de agregar criterios Given, When, Then para describir comportamientos esperados del sistema.
+
+## Decisión tomada:
+Se aceptó esta estructura porque permite definir claramente qué debe hacer el sistema y facilita posteriormente la creación de pruebas.
+
+## Cambios realizados:
+Se reorganizaron las funcionalidades del sistema de monitoreo en historias de usuario, agregando Story Points y prioridad mediante MoSCoW.
+
+## Resultado:
+Se obtuvo un Product Backlog con historias más claras, priorizadas y con criterios verificables.
+
+---
+
+# Entrada 2 – Organización del Sprint Planning
+
+## Uso de IA:
+Se utilizó IA para revisar la selección de historias del Sprint y verificar si las funcionalidades seleccionadas tenían relación con el objetivo principal del sistema.
+
+## Preguntas realizadas:
+Se consultó cómo elegir historias para un Sprint, qué significa Sprint Goal y cómo justificar por qué una historia debe incluirse en una iteración.
+
+También se preguntó qué elementos debía contener un Sprint Planning para cumplir con una metodología ágil.
+
+## Sugerencia recibida:
+Definir un objetivo principal del Sprint y seleccionar historias que permitan construir una primera versión funcional del núcleo del sistema.
+
+## Decisión tomada:
+Se aceptó trabajar primero con las funcionalidades principales relacionadas con sensores, lecturas, detección de anomalías y alertas.
+
+## Cambios realizados:
+Se seleccionaron historias relacionadas con el funcionamiento central del sistema y se agregaron justificaciones para cada selección.
+
+## Resultado:
+Se obtuvo un Sprint Planning enfocado en entregar valor funcional y no solamente acumular tareas.
+
+---
+
+# Entrada 3 – Comprensión de SensorReading y desarrollo TDD
+
+## Uso de IA:
+Se utilizó IA para comprender la estructura de la clase SensorReading y la relación entre la implementación y las pruebas unitarias.
+
+## Preguntas realizadas:
+Se consultó sobre el propósito de utilizar `dataclass`, el significado de las anotaciones de tipos y cómo interpretar los errores generados durante las pruebas.
+
+También se preguntó cómo identificar si un test realmente valida una funcionalidad o solamente ejecuta código sin comprobar comportamiento.
+
+## Sugerencia recibida:
+Crear una estructura sencilla para representar una lectura de sensor y comprobar mediante tests que los datos almacenados fueran correctos.
+
+## Decisión tomada:
+Se aceptó utilizar una estructura simple porque SensorReading representa únicamente información de una medición y no necesita lógica compleja.
+
+## Cambios realizados:
+Se implementó la clase SensorReading y sus pruebas correspondientes.
+
+## Resultado:
+Se comprendió la relación entre una clase de datos y las pruebas encargadas de validar su comportamiento.
+
+---
+
+# Entrada 4 – Diseño de AnomalyDetector
+
+## Uso de IA:
+Se utilizó IA para analizar la lógica de detección de anomalías y revisar la forma correcta de manejar los límites de temperatura y humedad.
+
+## Preguntas realizadas:
+Se consultó por qué los valores de los umbrales no deberían estar escritos directamente dentro del código y cómo hacer que fueran configurables.
+
+También se preguntó cómo pasar valores externos a una clase y por qué esto mejora el diseño.
+
+## Sugerencia recibida:
+Inyectar los valores de los umbrales mediante el constructor en lugar de utilizar valores fijos dentro de la clase.
+
+## Decisión tomada:
+Se aceptó este diseño porque permite cambiar las condiciones de alerta sin modificar el código interno.
+
+## Cambios realizados:
+Se implementó AnomalyDetector utilizando umbrales recibidos externamente.
+
+## Resultado:
+El detector quedó más flexible y preparado para diferentes configuraciones del sistema.
+
+---
+
+# Entrada 5 – Diseño de AlertManager y patrón Strategy
+
+## Uso de IA:
+Se utilizó IA para analizar la arquitectura del código realizado como borrador, realizando preguntas sobre el flujo de información entre clases y solicitando explicaciones mediante diagramas de flujo.
+
+## Preguntas realizadas:
+Se preguntó qué significaba la variable `strategy`, de dónde obtenía su valor y cómo una clase como ConsoleAlert podía convertirse en la estrategia utilizada por AlertManager.
+
+También se solicitó observar el recorrido completo de un mensaje desde que era generado hasta que era enviado por la estrategia.
+
+## Sugerencia recibida:
+Separar la responsabilidad de AlertManager de la forma específica de enviar alertas mediante una estrategia común con un método `send()`.
+
+## Decisión tomada:
+Se aceptó la separación porque permite cambiar entre diferentes métodos de alerta sin modificar AlertManager.
+
+## Cambios realizados:
+Se implementaron ConsoleAlert y FileAlert como estrategias independientes.
+
+## Resultado:
+Se comprendió el flujo de objetos y se obtuvo una estructura con menor acoplamiento, permitiendo agregar nuevas formas de alerta en el futuro.
+
+---
+
+# Entrada 6 – Revisión y mejora de la Bitácora de IA
+
+## Uso de IA:
+Se proporcionó a la IA una versión inicial de la Bitácora de IA y se solicitó una revisión del formato para determinar si era adecuada como documento de entrega.
+
+## Preguntas realizadas:
+Se preguntó si la estructura de la bitácora era clara, si cumplía con lo esperado para una entrega académica y qué aspectos podían mejorarse para presentar mejor el proceso de trabajo realizado durante la semana.
+
+## Sugerencia recibida:
+La IA recomendó mejorar la estructura de cada entrada separando claramente aspectos como:
+
+- Uso de IA.
+- Preguntas realizadas.
+- Sugerencias recibidas.
+- Decisiones tomadas.
+- Cambios realizados.
+- Resultado obtenido.
+
+También recomendó enfocar la bitácora no solamente en describir que se utilizó IA, sino en mostrar el razonamiento detrás de las decisiones tomadas y cómo se evaluaron las sugerencias recibidas.
+
+## Decisión tomada:
+Se decidió implementar el formato propuesto debido a que presenta de una manera más ordenada el proceso de aprendizaje y demuestra que la IA fue utilizada como una herramienta de apoyo, no como un reemplazo del análisis y la toma de decisiones.
+
+## Cambios realizados:
+Se reorganizó la Bitácora de IA utilizando una estructura más detallada para cada interacción, agregando las preguntas realizadas, las decisiones tomadas y la justificación de los cambios aplicados.
+
+## Resultado:
+Se obtuvo una bitácora más clara y profesional, donde se evidencia el proceso de uso de IA durante el desarrollo del proyecto y el criterio utilizado para aceptar o modificar las recomendaciones recibidas.
+
+# Reflexión final
+
+La IA fue utilizada como herramienta de apoyo para comprender conceptos, revisar decisiones de diseño y analizar errores encontrados durante el desarrollo.
+
+Las respuestas fueron revisadas antes de aplicar cambios. Cuando una explicación no era suficiente, se solicitaron ejemplos del flujo interno del programa para comprender el comportamiento antes de modificar el código.
+
+El uso de IA permitió mejorar la comprensión del diseño del sistema, pero las decisiones finales de implementación fueron evaluadas y adaptadas según las necesidades del proyecto.
+
+
+
 # AI LOG — Semana 3
 
 ## Semana 3 · Entrada 1: Arquitectura de la API y separación en 4 capas
@@ -1142,3 +1457,326 @@ Para las siguientes semanas voy a mantener una regla más estricta:
 > **No consideraré correcta una propuesta de IA hasta comprobar que coincide con el código, los datos y el comportamiento esperado del proyecto. Si la propuesta contradice el contexto existente, la cuestionaré antes de implementarla, aunque técnicamente parezca funcionar.**
 
 Esto convierte la IA en una herramienta de apoyo al desarrollo y no en una fuente automática de decisiones arquitectónicas.
+
+
+
+# BITÁCORA DE IA — SEMANA 6
+
+## Consolidación de requisitos, consultas, alertas, despliegue y mantenimiento de la arquitectura
+
+### Nota inicial
+
+Durante el lunes y martes no se realizaron actividades de desarrollo relacionadas con SensorHub. El inicio del semestre requirió organizar las nuevas materias, horarios y actividades de servicio social, por lo que el trabajo técnico de esta semana comenzó a partir del miércoles.
+
+La mayor parte de la semana estuvo enfocada en completar y verificar los requisitos funcionales restantes, procurando mantener la arquitectura en capas y evitar modificar innecesariamente código que ya funcionaba desde semanas anteriores.
+
+---
+
+### Entrada 1 — Miércoles: CRUD de sensores y validación de lecturas
+
+**Qué necesitaba resolver**
+
+El primer objetivo fue trabajar sobre los requisitos relacionados con la gestión de sensores.
+
+Uno de los puntos importantes era definir correctamente el comportamiento del CRUD de sensores en producción. El requisito establece que un sensor no debe eliminarse físicamente, sino desactivarse para conservar la información histórica relacionada con él.
+
+También se revisó el requisito de ingesta de lecturas mediante `POST`, incluyendo la validación física correspondiente al tipo de sensor.
+
+**Prompt enviado a la IA**
+
+> En SensorHub necesito implementar/verificar el CRUD de sensores con id, ubicación, tipo y umbral de alerta. En producción los sensores no deben eliminarse físicamente, sino desactivarse. Explícame qué significa esto y cómo debería integrarlo con la arquitectura que ya tengo sin romper las responsabilidades de las capas existentes. También revisa cómo debería manejarse la ingesta de lecturas y la validación según el tipo de sensor.
+
+**Qué propuso la IA**
+
+La IA explicó que la desactivación de un sensor es diferente de eliminarlo de la base de datos.
+
+En lugar de ejecutar un `DELETE`, el sistema conserva el registro y modifica su estado para indicar que ya no está activo. De esta manera, las lecturas históricas y las relaciones con otros registros no desaparecen.
+
+También se revisó la separación de responsabilidades:
+
+* el router recibe la petición HTTP;
+* el service contiene la lógica de negocio;
+* el repository realiza el acceso a datos;
+* el model representa la información persistida;
+* los schemas validan los datos que pueden comprobarse únicamente con la información recibida.
+
+**Qué implementé**
+
+Se trabajó en el CRUD de sensores considerando el comportamiento de producción y se revisó dónde debía colocarse cada parte de la lógica para mantener la arquitectura en capas.
+
+También se revisó el requisito de ingesta de lecturas mediante `POST`.
+
+La validación física por tipo de sensor ya se encontraba implementada desde semanas anteriores, por lo que en esta etapa no fue necesario reconstruirla. Se corroboró que la implementación existente correspondiera con el requisito:
+
+**RF-2 — Ingesta de lecturas con validación física por tipo de sensor.**
+
+La validación utiliza el tipo de sensor para determinar qué unidades y rangos físicos son válidos.
+
+**Problemas**
+
+El principal problema durante esta parte fue entender cómo introducir nuevos comportamientos sin romper la estructura existente.
+
+El proyecto ya tenía varias capas y servicios implementados, por lo que agregar una funcionalidad directamente en un router o modificar un repository sin considerar el resto del flujo podía terminar mezclando responsabilidades.
+
+**Verificación**
+
+Se revisó el comportamiento existente y se comprobó que la ingesta de lecturas ya realizaba las validaciones correspondientes.
+
+También se verificó que la gestión de sensores siguiera el flujo de:
+
+```text
+Router → Service → Repository → Model
+```
+
+sin trasladar la lógica de negocio directamente al endpoint.
+
+**Decisión y aprendizaje**
+
+Esta parte reforzó una idea que ya había aparecido durante las semanas anteriores: antes de modificar código es necesario entender dónde pertenece realmente una responsabilidad.
+
+También comprendí mejor la diferencia entre **eliminar información** y **desactivar una entidad**. Para un sistema de monitoreo, conservar los sensores históricos resulta importante porque sus lecturas anteriores siguen formando parte del historial del sistema.
+
+---
+
+### Entrada 2 — Jueves: consultas, paginación, alertas, estadísticas y despliegue
+
+**Qué necesitaba resolver**
+
+El jueves fue el día de mayor trabajo de la semana.
+
+Primero se trabajó en el requisito de consulta de lecturas por sensor, incluyendo paginación y filtro por rango de fechas.
+
+Después se continuó con la gestión de alertas. La detección de una lectura fuera del umbral ya estaba implementada desde semanas anteriores, por lo que el objetivo no era volver a crear esa lógica, sino construir la gestión de las alertas que ya generaba el sistema.
+
+Finalmente se revisaron las estadísticas por sensor, el endpoint de salud y las métricas básicas.
+
+**Prompt enviado a la IA**
+
+> Revisa la arquitectura actual de SensorHub y ayúdame a implementar las consultas de lecturas por sensor con paginación y filtro por rango de fechas. Quiero saber en qué capa debe ir cada parte y qué archivos necesito modificar o crear. No quiero romper la separación entre router, service y repository.
+
+**Qué propuso la IA**
+
+La IA propuso mantener la separación de responsabilidades y hacer que los parámetros de consulta llegaran desde el router hacia el service y posteriormente al repository.
+
+La paginación y los filtros debían formar parte de la consulta de datos, mientras que el router únicamente debía encargarse de recibir los parámetros HTTP y devolver la respuesta correspondiente.
+
+También se revisó la estructura necesaria para que la consulta pudiera crecer posteriormente sin concentrar toda la lógica en el endpoint.
+
+**Qué implementé**
+
+Se agregaron y modificaron los archivos necesarios para permitir las consultas de lecturas por sensor.
+
+Se trabajó con:
+
+* consulta por sensor;
+* paginación;
+* filtro por rango de fechas;
+* parámetros de consulta;
+* respuesta estructurada;
+* separación entre router, service y repository.
+
+El objetivo fue que el endpoint no tuviera que conocer directamente los detalles de la consulta a la base de datos.
+
+---
+
+**Segunda parte: gestión de alertas**
+
+La detección de anomalías ya existía desde semanas anteriores. Cuando una lectura supera el umbral configurado para el sensor, el sistema ya podía detectar la condición de alerta.
+
+Por lo tanto, el trabajo de esta semana se concentró en el **RF-5 — Gestión de alertas**:
+
+* consulta de alertas activas;
+* consulta de alertas existentes;
+* cambio de estado;
+* estados `open`, `acknowledged` y `resolved`.
+
+**Prompt enviado a la IA**
+
+> Ya tengo implementada desde semanas anteriores la detección de alertas cuando una lectura supera el `alert_threshold`. Ahora necesito implementar la gestión de esas alertas: consultarlas y cambiar su estado entre `open`, `acknowledged` y `resolved`. ¿Cómo puedo agregar esto sin romper lo que ya tengo y manteniendo la separación de responsabilidades de mi arquitectura en capas?
+
+**Qué propuso la IA**
+
+La IA propuso mantener la detección y la gestión como responsabilidades relacionadas pero separadas.
+
+La lógica que determina si una lectura genera una alerta debía permanecer en la lógica de negocio existente, mientras que la nueva funcionalidad debía encargarse de administrar el estado y consulta de las alertas.
+
+La estructura debía conservar el flujo:
+
+```text
+Router
+   ↓
+Service
+   ↓
+Repository
+   ↓
+Model
+```
+
+**Qué implementé**
+
+Se incorporó la gestión de las alertas existentes sin eliminar la lógica que ya funcionaba.
+
+Esto permitió mantener la detección de anomalías separada de las operaciones posteriores sobre una alerta.
+
+De esta forma, una alerta puede ser generada cuando corresponde y posteriormente consultarse o cambiar de estado mediante la API.
+
+---
+
+**Tercera parte: estadísticas y health check**
+
+También se trabajó en los requisitos:
+
+**RF-6 — Estadísticas por sensor y periodo**
+
+Se implementó/verificó la obtención de estadísticas como:
+
+* mínimo;
+* máximo;
+* promedio;
+
+considerando el sensor y el periodo solicitado.
+
+También se trabajó con:
+
+**RF-7 — Endpoint de salud `/health` y métricas básicas.**
+
+Se verificó que el endpoint permitiera comprobar el estado de la API y que las métricas correspondientes pudieran obtenerse sin mezclar esta responsabilidad con la lógica principal de sensores y lecturas.
+
+**Problemas**
+
+Uno de los problemas más importantes apareció al intentar llevar los cambios a producción.
+
+En local, los cambios funcionaban correctamente, pero al desplegarlos en Render apareció un error relacionado con **Alembic y las migraciones de la base de datos**.
+
+Inicialmente pensé que el problema estaba en mi código y pasé varias horas revisando las modificaciones realizadas.
+
+Después de revisar con mayor detalle el comportamiento de Render, descubrí que el problema estaba relacionado con una migración anterior que había quedado registrada en la base de datos de producción.
+
+Esa migración había quedado vacía, posteriormente fue eliminada y se creó otra migración correcta, pero Render conservaba el historial anterior en su base de datos. Por lo tanto, Alembic intentaba ejecutar una migración cuyo identificador ya no coincidía con los archivos existentes en el repositorio.
+
+**Qué cambié**
+
+En lugar de continuar modificando código de la aplicación intentando solucionar un problema que ya no correspondía a la implementación, investigué el estado del despliegue y de las migraciones almacenadas en Render.
+
+Consulté a la IA sobre cómo reiniciar el entorno de Render y posteriormente realicé nuevamente el despliegue manual.
+
+**Verificación**
+
+Después de reiniciar el entorno y ejecutar el **Manual Deploy**, Render pudo ejecutar correctamente las migraciones y levantar nuevamente el servidor con los cambios actuales.
+
+Esto permitió comprobar que el problema no estaba en la lógica nueva de SensorHub, sino en el estado anterior de la base de datos de producción y su historial de migraciones.
+
+**Decisión y aprendizaje**
+
+Esta experiencia fue importante porque inicialmente estaba buscando el error únicamente dentro de mi código.
+
+Aprendí que cuando una aplicación funciona correctamente en local pero falla durante el despliegue, también hay que revisar el estado del entorno de producción, las migraciones almacenadas y la configuración del servicio.
+
+La IA fue útil para orientar la investigación, pero la solución no consistió simplemente en copiar una modificación de código. Primero tuve que identificar que el problema estaba fuera de la aplicación.
+
+---
+
+### Entrada 3 — Viernes: Pull Request, logs estructurados y validación final
+
+**Qué necesitaba resolver**
+
+El viernes se concentró principalmente en preparar los cambios realizados durante la semana y llevarlos al flujo de revisión mediante Pull Request.
+
+También se revisó la arquitectura general del proyecto y se identificó un punto que todavía podía mejorarse: los logs.
+
+La arquitectura en capas ya estaba funcionando correctamente en términos generales, por lo que no era necesario realizar una reorganización importante.
+
+El cambio principal de esta parte fue implementar **logs estructurados**.
+
+**Prompt enviado a la IA**
+
+> Mi arquitectura en capas ya está funcionando y no quiero hacer cambios innecesarios en routers, services, repositories, models y schemas. Necesito mejorar únicamente los logs para que sean estructurados y útiles para diagnosticar errores y revisar el comportamiento de la API. Explícame qué debería cambiar y en qué parte de la arquitectura debería hacerlo.
+
+**Qué propuso la IA**
+
+La IA propuso centralizar el formato de los registros y utilizar información estructurada en lugar de depender únicamente de mensajes de texto diferentes en cada parte del proyecto.
+
+Esto permite que los logs sean más fáciles de interpretar y posteriormente procesar.
+
+También recomendó evitar introducir lógica de logging específica dentro de cada capa cuando pudiera resolverse mediante una configuración común.
+
+**Qué implementé**
+
+Se modificó la configuración de logs para utilizar un formato más estructurado.
+
+El objetivo fue mantener información útil para identificar qué ocurrió durante la ejecución de la API sin modificar innecesariamente las responsabilidades de las capas.
+
+La arquitectura principal continuó manteniendo la separación existente entre:
+
+```text
+Routers
+   ↓
+Services
+   ↓
+Repositories
+   ↓
+Models
+```
+
+mientras que los schemas continuaron funcionando como contratos de entrada y salida.
+
+**Verificación**
+
+Se revisó que los cambios de la semana no rompieran la arquitectura existente y se ejecutaron las validaciones disponibles del proyecto.
+
+También se comprobó nuevamente el funcionamiento de la API y el despliegue en producción después de solucionar el problema de las migraciones de Render.
+
+Finalmente, los cambios quedaron preparados para el Pull Request correspondiente.
+
+**Decisión y aprendizaje**
+
+El aprendizaje principal del viernes fue que no todas las semanas requieren una modificación arquitectónica grande.
+
+En este caso, la arquitectura en capas ya estaba cumpliendo correctamente su función. La prioridad fue agregar funcionalidades nuevas sin romper las responsabilidades que ya estaban definidas.
+
+También confirmé que los logs forman parte importante de la operación de una API en producción. Una aplicación puede funcionar correctamente, pero si no deja información suficiente para diagnosticar errores, resulta mucho más difícil mantenerla.
+
+---
+
+## Retrospectiva de la semana
+
+Durante esta semana el trabajo estuvo principalmente enfocado en completar los requisitos funcionales restantes de SensorHub y llevarlos a un estado más cercano a producción.
+
+Se trabajó principalmente en:
+
+* **RF-1:** CRUD de sensores y comportamiento de desactivación en producción.
+* **RF-2:** verificación de la ingesta de lecturas y validación física por tipo de sensor.
+* **RF-3:** consultas de lecturas por sensor, paginación y filtros por rango de fechas.
+* **RF-4:** verificación de la detección de anomalías y generación de alertas.
+* **RF-5:** consulta y gestión del estado de las alertas.
+* **RF-6:** estadísticas por sensor y periodo.
+* **RF-7:** endpoint `/health` y métricas básicas.
+* **RNF-5:** mejora de los logs estructurados.
+* Preparación de los cambios para revisión mediante Pull Request.
+
+La mayor dificultad de la semana no estuvo directamente en escribir código, sino en **integrar nuevas funcionalidades con una arquitectura que ya tenía varias piezas funcionando**.
+
+Por eso, gran parte de las consultas realizadas a la IA estuvieron orientadas a preguntas como:
+
+* ¿En qué capa debería colocar esta lógica?
+* ¿Qué archivo debería modificar?
+* ¿Cómo puedo obtener este dato sin acoplar las clases?
+* ¿Cómo puedo agregar esta funcionalidad sin romper lo que ya existe?
+* ¿Cómo puedo mantener la separación de responsabilidades?
+* ¿Cómo puedo reutilizar la lógica que ya existe?
+
+El problema de Render también mostró que un error durante el despliegue no necesariamente significa que el código de la aplicación esté incorrecto. En este caso, la causa estaba relacionada con el historial de migraciones almacenado en el entorno de producción.
+
+La experiencia de esta semana reforzó el proceso que ya había establecido anteriormente:
+
+> **Entender → preguntar → analizar la propuesta → implementar → ejecutar → verificar → corregir.**
+
+La IA funcionó principalmente como una herramienta para localizar dónde hacer los cambios y entender las relaciones entre las diferentes partes del proyecto. La decisión final sobre qué implementar se tomó comparando sus propuestas con el código real, los requisitos y el comportamiento esperado de SensorHub.
+
+## Aprendizaje final
+
+Esta semana comprendí mejor que mantener una arquitectura no significa evitar modificar el código, sino **modificarlo respetando las responsabilidades que ya existen**.
+
+También confirmé que una solución técnicamente válida no necesariamente es la solución correcta para el proyecto. Esto ocurrió especialmente durante la depuración del despliegue en Render: durante varias horas asumí que el problema estaba en mi implementación cuando realmente estaba relacionado con el estado de las migraciones en producción.
+
+Por ello, continúo utilizando la IA como apoyo para comprender, investigar y proponer soluciones, pero la validación final depende del comportamiento real del proyecto y de las pruebas realizadas.
